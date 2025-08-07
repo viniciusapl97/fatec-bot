@@ -117,6 +117,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 # =============================================================================
 
 async def list_subjects(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Lista as matérias com a nova formatação de grade aprimorada."""
     query = update.callback_query
     if query:
         await query.answer()
@@ -146,21 +147,30 @@ async def list_subjects(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
                 if day_subjects:
                     message += dialogs.SUBJECT_LIST_DAY_HEADER.format(day=d.upper())
                     for s in day_subjects:
-                        st = s.start_time.strftime("%H:%M") if s.start_time else "--:--"
-                        et = s.end_time.strftime("%H:%M") if s.end_time else "--:--"
-                        message += dialogs.SUBJECT_LIST_ITEM.format(st=st, et=et, name=s.name, room=s.room)
+                        message += dialogs.SUBJECT_LIST_ITEM.format(
+                            st=s.start_time.strftime('%H:%M') if s.start_time else '--:--',
+                            et=s.end_time.strftime('%H:%M') if s.end_time else '--:--',
+                            name=s.name,
+                            professor=s.professor,
+                            room=s.room
+                        )
                         
                         grades = grade_service.get_grades_by_subject(db, s)
                         if grades:
-                            gl = ", ".join(f"{g.name}: <b>{g.value:.2f}</b>" for g in grades)
-                            message += dialogs.SUBJECT_LIST_GRADES_PREFIX.format(grades=gl)
+                            gl = ", ".join(f"<b>{g.name}</b>: {g.value:.2f}" for g in grades)
+                            message += dialogs.SUBJECT_LIST_GRADES_LINE.format(grades=gl)
                         
                         if s.total_absences > 0:
-                            message += dialogs.SUBJECT_LIST_ABSENCES_PREFIX.format(absences=s.total_absences)
-                    message += "\n"
+                            message += dialogs.SUBJECT_LIST_ABSENCES_LINE.format(absences=s.total_absences)
+                        
+                        # Adiciona um pequeno espaço entre as matérias de um mesmo dia
+                        message += "\n"
 
+                    # Adiciona o separador no final de cada dia com aulas
+                    message += dialogs.SEPARATOR
+    
     if query:
-        await query.edit_message_text(message, parse_mode="HTML")
+        await query.edit_message_text(message, parse_mode='HTML')
     else:
         await update.message.reply_html(message)
 
