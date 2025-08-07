@@ -29,3 +29,27 @@ def get_grades_by_subject(db: Session, subject: Subject) -> List[Grade]:
 def get_grades_by_user(db: Session, user: User) -> List[Grade]:
     """Retorna uma lista de todas as notas de um usuário."""
     return db.query(Grade).filter(Grade.user_id == user.user_id).all()
+
+def get_grade_by_id(db: Session, grade_id: int) -> Grade | None:
+    """Busca uma nota pelo seu ID primário."""
+    return db.query(Grade).filter(Grade.id == grade_id).first()
+
+def update_grade(db: Session, grade_id: int, new_name: str, new_value: Decimal) -> Grade | None:
+    """Atualiza o nome e o valor de uma nota específica."""
+    db_grade = get_grade_by_id(db, grade_id)
+    if db_grade:
+        db_grade.name = new_name
+        db_grade.value = new_value
+        db.commit()
+        db.refresh(db_grade)
+        return db_grade
+    return None
+
+def delete_grade_by_id(db: Session, grade_id: int) -> bool:
+    """Deleta uma nota pelo seu ID primário."""
+    grade_to_delete = get_grade_by_id(db, grade_id)
+    if grade_to_delete:
+        db.delete(grade_to_delete)
+        db.commit()
+        return True
+    return False

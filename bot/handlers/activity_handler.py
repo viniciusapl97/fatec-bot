@@ -12,15 +12,15 @@ from telegram.ext import (
 
 from bot.db.base import SessionLocal
 from bot.services import user_service, subject_service, activity_service
+from bot.core import dialogs
 
 logger = logging.getLogger(__name__)
 
-# --- Estados para a conversa de CRIAÇÃO ---
+# Estados para a conversa de CRIAÇÃO
 A_NAME, A_SUBJECT, A_DUEDATE, A_NOTES = range(20, 24)
 
-# --- Estados para a conversa de GERENCIAMENTO ---
+# Estados para a conversa de GERENCIAMENTO
 SELECT_ACTIVITY_ACTION, CONFIRM_ACTIVITY_DELETE, SHOWING_ACTIVITY_EDIT_OPTIONS, AWAITING_ACTIVITY_NEW_VALUE = range(30, 34)
-
 
 # =============================================================================
 # Seção 1: Handler de Conversa para /addtrabalho e /addprova
@@ -40,13 +40,8 @@ async def new_activity_start(update: Update, context: ContextTypes.DEFAULT_TYPE)
         activity_type = "trabalho" if command == "addtrabalho" else "prova"
     
     context.user_data['activity_type'] = activity_type
+    text = dialogs.ACTIVITY_CREATE_PROMPT.format(activity_type=activity_type)
     
-    text = (
-        f"Vamos adicionar um(a) novo(a) *{activity_type}*.\n"
-        "Qual o nome? (Ex: Entrega da API, Prova P2)\n\n"
-        "Envie /cancelar para interromper."
-    )
-
     if query:
         await query.message.reply_text(text, parse_mode='Markdown')
     else:
@@ -55,41 +50,44 @@ async def new_activity_start(update: Update, context: ContextTypes.DEFAULT_TYPE)
     return A_NAME
 
 async def received_activity_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    context.user_data['activity_name'] = update.message.text
+    context.user_data["activity_name"] = update.message.text
     telegram_user = update.effective_user
     with SessionLocal() as db:
         user, _ = user_service.get_or_create_user(db, telegram_user.id, telegram_user.first_name, telegram_user.username)
         subjects = subject_service.get_subjects_by_user(db, user)
 
     if not subjects:
-        await update.message.reply_text("Você precisa ter matérias cadastradas para adicionar uma atividade. Use /addmateria primeiro.")
+        await update.message.reply_text(dialogs.ACTIVITY_CREATE_NO_SUBJECTS)
         context.user_data.clear()
         return ConversationHandler.END
 
     keyboard = [[InlineKeyboardButton(s.name, callback_data=f"link_subject_{s.id}")] for s in subjects]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("Ok. Agora, a qual matéria este item pertence?", reply_markup=reply_markup)
+    await update.message.reply_text(dialogs.ACTIVITY_CREATE_ASK_SUBJECT, reply_markup=reply_markup)
     return A_SUBJECT
 
 async def received_activity_subject(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     query = update.callback_query
     await query.answer()
     subject_id = int(query.data.split('_')[2])
-    context.user_data['subject_id'] = subject_id
+    context.user_data["subject_id"] = subject_id
     with SessionLocal() as db:
         subject = subject_service.get_subject_by_id(db, subject_id)
-    await query.edit_message_text(f"Matéria '{subject.name}' selecionada.\n\nQual a data de entrega? Por favor, envie no formato *DD/MM/AAAA*.", parse_mode='Markdown')
+    await query.edit_message_text(
+        dialogs.ACTIVITY_CREATE_CONFIRM_SUBJECT_ASK_DATE.format(subject_name=subject.name),
+        parse_mode="HTML"
+    )
     return A_DUEDATE
 
 async def received_activity_due_date(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     date_str = update.message.text
     try:
         due_date_obj = datetime.strptime(date_str, "%d/%m/%Y").date()
-        context.user_data['due_date'] = due_date_obj
+        context.user_data["due_date"] = due_date_obj
     except ValueError:
-        await update.message.reply_text("Formato de data inválido. 😓\nPor favor, envie novamente no formato *DD/MM/AAAA*.", parse_mode='Markdown')
+        await update.message.reply_text(dialogs.ERROR_INVALID_DATE, parse_mode="HTML")
         return A_DUEDATE
-    await update.message.reply_text("Data anotada! Você quer adicionar alguma observação? Se não, pode enviar 'não' ou 'pular'.")
+    await update.message.reply_text(dialogs.ACTIVITY_CREATE_ASK_NOTES)
     return A_NOTES
 
 async def received_activity_notes(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -101,25 +99,46 @@ async def received_activity_notes(update: Update, context: ContextTypes.DEFAULT_
     telegram_user = update.effective_user
     with SessionLocal() as db:
         user, _ = user_service.get_or_create_user(db, telegram_user.id, telegram_user.first_name, telegram_user.username)
-        subject = subject_service.get_subject_by_id(db, data['subject_id'])
+        subject = subject_service.get_subject_by_id(db, data["subject_id"])
         activity_service.create_activity(
-            db=db, user=user, subject=subject, name=data['activity_name'],
-            due_date=data['due_date'], notes=notes, activity_type=data['activity_type']
+            db=db, user=user, subject=subject, name=data["activity_name"],
+            due_date=data["due_date"], notes=notes, activity_type=data["activity_type"],
         )
-    await update.message.reply_text(f"✅ *{data['activity_type'].capitalize()}* '{data['activity_name']}' adicionado(a) com sucesso!")
+    await update.message.reply_text(
+        dialogs.ACTIVITY_CREATE_SUCCESS.format(activity_type=data["activity_type"].capitalize(), activity_name=data["activity_name"])
+    )
     context.user_data.clear()
     return ConversationHandler.END
 
 async def activity_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if update.callback_query:
-        await update.callback_query.edit_message_text("Operação cancelada.")
+        await update.callback_query.edit_message_text(dialogs.OPERATION_CANCELED)
     else:
-        await update.message.reply_text("Operação cancelada.")
+        await update.message.reply_text(dialogs.OPERATION_CANCELED)
     context.user_data.clear()
     return ConversationHandler.END
 
+def setup_activity_handler() -> ConversationHandler:
+    """Cria o ConversationHandler para /addtrabalho e /addprova."""
+    return ConversationHandler(
+        entry_points=[
+            CommandHandler("addtrabalho", new_activity_start),
+            CommandHandler("addprova", new_activity_start),
+            CallbackQueryHandler(new_activity_start, pattern="^start_new_activity_trabalho$"),
+            CallbackQueryHandler(new_activity_start, pattern="^start_new_activity_prova$")
+        ],
+        states={
+            A_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_activity_name)],
+            A_SUBJECT: [CallbackQueryHandler(received_activity_subject, pattern="^link_subject_")],
+            A_DUEDATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_activity_due_date)],
+            A_NOTES: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_activity_notes)],
+        },
+        fallbacks=[CommandHandler("cancelar", activity_cancel)],
+    )
+    
+    
 # =============================================================================
-# Seção 2: Handler de Comando para /calendario (Leitura)
+# Seção 2: Lógica de Listagem e Gerenciamento
 # =============================================================================
 
 async def list_activities(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -136,34 +155,31 @@ async def list_activities(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         activities = activity_service.get_activities_by_user(db, user)
 
         if not activities:
-            message = "Você não tem nenhuma atividade na sua agenda. Use /addtrabalho ou /addprova para começar."
+            message = dialogs.ACTIVITY_LIST_NO_ACTIVITIES
         else:
-            message = "🗓️ *Seu Calendário de Entregas e Provas:*\n\n"
-            for activity in activities:
-                icon = "📝" if activity.activity_type == 'trabalho' else "❗️"
-                formatted_date = activity.due_date.strftime("%d/%m/%Y")
-                
-                message += f"{icon} *{activity.name}* ({activity.activity_type.capitalize()})\n"
-                message += f"   • *Matéria:* {activity.subject.name}\n"
-                message += f"   • *Data:* {formatted_date}\n"
-                if activity.notes:
-                    message += f"   • *Obs:* {activity.notes}\n"
-                message += "—" * 20 + "\n\n"
+            message = dialogs.ACTIVITY_LIST_HEADER
+            for a in activities:
+                icon = "📝" if a.activity_type == "trabalho" else "❗️"
+                date_str = a.due_date.strftime("%d/%m/%Y")
+                message += (
+                    f"{icon} <b>{a.name}</b> ({a.activity_type.capitalize()})\n"
+                    f"   • <b>Matéria:</b> {a.subject.name}\n"
+                    f"   • <b>Data:</b> {date_str}\n"
+                )
+                if a.notes:
+                    message += f"   • <b>Obs:</b> {a.notes}\n"
+                message += dialogs.SEPARATOR
     
     if query:
-        await query.edit_message_text(message, parse_mode='HTML')
+        await query.edit_message_text(message, parse_mode="HTML")
     else:
         await update.message.reply_html(message)
 
-# =============================================================================
-# Seção 3: Handler de Conversa para Gerenciamento (Editar/Excluir)
-# =============================================================================
 
 async def manage_activities_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Função de entrada para /gerenciartrabalhos e /gerenciarprovas (via comando ou botão)."""
+    """Função de entrada para /gerenciartrabalhos e /gerenciarprovas."""
     query = update.callback_query
     activity_type = ""
-
     if query:
         await query.answer()
         data = query.data
@@ -172,33 +188,32 @@ async def manage_activities_start(update: Update, context: ContextTypes.DEFAULT_
         command = update.message.text.split(' ')[0][1:]
         activity_type = "trabalho" if command == "gerenciartrabalhos" else "prova"
     
-    context.user_data['activity_type_to_manage'] = activity_type
-    
-    telegram_user = update.effective_user or (query.from_user if query else None)
+    context.user_data["activity_type_to_manage"] = activity_type
+    telegram_user = query.from_user if query else update.effective_user
+
     with SessionLocal() as db:
         user, _ = user_service.get_or_create_user(db, telegram_user.id, telegram_user.first_name, telegram_user.username)
-        activities = activity_service.get_activities_by_user_and_type(db, user, activity_type)
+        acts = activity_service.get_activities_by_user_and_type(db, user, activity_type)
 
-    if not activities:
-        text = f"Você não tem nenhum(a) {activity_type} para gerenciar."
+    if not acts:
+        text = dialogs.MANAGE_ACTIVITIES_NONE.format(type=activity_type)
         if query: await query.edit_message_text(text)
         else: await update.message.reply_text(text)
         return ConversationHandler.END
 
-    keyboard = [[InlineKeyboardButton(f"{a.name} ({a.due_date.strftime('%d/%m')})", callback_data=f"mng_act_{a.id}")] for a in activities]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    text = f"Escolha um(a) *{activity_type}* para gerenciar:"
-
-    if query: await query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
-    else: await update.message.reply_text(text, reply_markup=reply_markup, parse_mode='Markdown')
+    kb = [[InlineKeyboardButton(f"{a.name} ({a.due_date.strftime('%d/%m')})", callback_data=f"mng_act_{a.id}")] for a in acts]
+    text = dialogs.MANAGE_ACTIVITIES_HEADER.format(type=activity_type.capitalize())
+    reply_markup = InlineKeyboardMarkup(kb)
+    
+    if query: await query.edit_message_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+    else: await update.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
         
     return SELECT_ACTIVITY_ACTION
 
+
 async def select_activity_action_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Mostra as opções de Edição/Exclusão para a atividade escolhida."""
     query = update.callback_query
     await query.answer()
-    
     activity_id = int(query.data.split('_')[-1])
     context.user_data['activity_id_to_manage'] = activity_id
 
@@ -210,23 +225,22 @@ async def select_activity_action_callback(update: Update, context: ContextTypes.
         [InlineKeyboardButton("Excluir 🗑️", callback_data=f"delete_activity_{activity_id}")],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await query.edit_message_text(f"Gerenciando: *{activity.name}*\nO que você deseja fazer?", reply_markup=reply_markup, parse_mode='Markdown')
+    await query.edit_message_text(dialogs.MANAGING_ACTIVITY_HEADER.format(name=activity.name), reply_markup=reply_markup, parse_mode='HTML')
     return SELECT_ACTIVITY_ACTION
 
+
 async def show_activity_edit_options(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Mostra os dados atuais da atividade e botões para editar cada campo."""
     query = update.callback_query
     await query.answer()
     activity_id = context.user_data['activity_id_to_manage']
     with SessionLocal() as db:
         activity = activity_service.get_activity_by_id(db, activity_id)
     
-    text = (
-        f"📝 *Editando: {activity.name}*\n\n"
-        f"▪️ *Matéria:* {activity.subject.name}\n"
-        f"▪️ *Data:* {activity.due_date.strftime('%d/%m/%Y')}\n"
-        f"▪️ *Obs:* {activity.notes or 'Nenhuma'}\n\n"
-        "Selecione o campo que deseja alterar:"
+    text = dialogs.EDITING_ACTIVITY_HEADER.format(
+        name=activity.name,
+        subject=activity.subject.name,
+        date=activity.due_date.strftime('%d/%m/%Y'),
+        notes=(activity.notes or 'Nenhuma')
     )
     keyboard = [
         [
@@ -240,11 +254,11 @@ async def show_activity_edit_options(update: Update, context: ContextTypes.DEFAU
         [InlineKeyboardButton("« Voltar", callback_data=f"mng_act_{activity_id}")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
+    await query.edit_message_text(text, reply_markup=reply_markup, parse_mode='HTML')
     return SHOWING_ACTIVITY_EDIT_OPTIONS
 
+
 async def select_activity_field_to_edit_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Recebe o campo a ser editado e pede o novo valor."""
     query = update.callback_query
     await query.answer()
     field_to_edit = query.data.split('_')[1]
@@ -257,16 +271,16 @@ async def select_activity_field_to_edit_callback(update: Update, context: Contex
             subjects = subject_service.get_subjects_by_user(db, user)
         keyboard = [[InlineKeyboardButton(s.name, callback_data=f"newsubjectid_{s.id}")] for s in subjects]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text("Por favor, escolha a nova matéria:", reply_markup=reply_markup)
+        await query.edit_message_text(dialogs.ASK_NEW_SUBJECTID, reply_markup=reply_markup)
     elif field_to_edit == "due_date":
-        await query.message.reply_text("Por favor, envie a nova data no formato *DD/MM/AAAA*:", parse_mode='Markdown')
+        await query.message.reply_text(dialogs.ASK_NEW_DUE_DATE, parse_mode='HTML')
     else:
         field_map = {'name': 'nome', 'notes': 'observações'}
-        await query.message.reply_text(f"Por favor, envie o novo valor para *{field_map[field_to_edit]}*:", parse_mode='Markdown')
+        await query.message.reply_text(dialogs.ASK_NEW_FIELD.format(field=field_map[field_to_edit]), parse_mode='HTML')
     return AWAITING_ACTIVITY_NEW_VALUE
 
+
 async def receive_activity_field_update(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Recebe o novo valor, atualiza e volta ao menu de edição."""
     query = update.callback_query
     field_to_edit = context.user_data.get('field_to_edit')
     activity_id = context.user_data.get('activity_id_to_manage')
@@ -283,7 +297,7 @@ async def receive_activity_field_update(update: Update, context: ContextTypes.DE
             try:
                 new_value = datetime.strptime(new_value, "%d/%m/%Y").date()
             except ValueError:
-                await update.message.reply_text("Formato de data inválido. 😓 Tente novamente: *DD/MM/AAAA*.", parse_mode='Markdown')
+                await update.message.reply_text(dialogs.ERROR_INVALID_DATE, parse_mode='HTML')
                 return AWAITING_ACTIVITY_NEW_VALUE
         elif field_to_edit == 'notes' and new_value.lower() in ['não', 'nao', 'n', 'pular', 'remover']:
             new_value = None
@@ -291,7 +305,6 @@ async def receive_activity_field_update(update: Update, context: ContextTypes.DE
     with SessionLocal() as db:
         activity_service.update_activity(db, activity_id, {field_to_edit: new_value})
 
-    # Simula um clique de botão para voltar ao menu de edição
     message_to_send_from = update.message if not query else query.message
     fake_update = type('Update', (), {'callback_query': type('CallbackQuery', (), {'data': f"edit_activity_{activity_id}", 'answer': (lambda: None), 'from_user': update.effective_user, 'message': message_to_send_from})(), 'effective_user': update.effective_user})()
     return await show_activity_edit_options(fake_update, context)
@@ -305,8 +318,9 @@ async def handle_delete_confirmation(update: Update, context: ContextTypes.DEFAU
         InlineKeyboardButton("✅ Sim, excluir", callback_data=f"confirmdelete_activity_{activity_id}"),
         InlineKeyboardButton("❌ Cancelar", callback_data=f"mng_act_{activity_id}")
     ]]
-    await query.edit_message_text("Tem certeza que deseja excluir este item?", reply_markup=InlineKeyboardMarkup(keyboard))
+    await query.edit_message_text(dialogs.CONFIRM_DELETE_ITEM, reply_markup=InlineKeyboardMarkup(keyboard))
     return CONFIRM_ACTIVITY_DELETE
+
 
 async def confirm_activity_delete_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     query = update.callback_query
@@ -314,31 +328,10 @@ async def confirm_activity_delete_callback(update: Update, context: ContextTypes
     activity_id = int(query.data.split('_')[-1])
     with SessionLocal() as db:
         activity_service.delete_activity_by_id(db, activity_id)
-    await query.edit_message_text("Item excluído com sucesso.")
+    await query.edit_message_text(dialogs.ACTIVITY_DELETED)
     context.user_data.clear()
     return ConversationHandler.END
 
-
-# =============================================================================
-# Seção 4: Funções de Setup que Montam os Handlers
-# =============================================================================
-
-def setup_activity_handler() -> ConversationHandler:
-    return ConversationHandler(
-        entry_points=[
-            CommandHandler("addtrabalho", new_activity_start),
-            CommandHandler("addprova", new_activity_start),
-            CallbackQueryHandler(new_activity_start, pattern="^start_new_activity_trabalho$"),
-            CallbackQueryHandler(new_activity_start, pattern="^start_new_activity_prova$")
-        ],
-        states={
-            A_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_activity_name)],
-            A_SUBJECT: [CallbackQueryHandler(received_activity_subject, pattern="^link_subject_")],
-            A_DUEDATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_activity_due_date)],
-            A_NOTES: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_activity_notes)],
-        },
-        fallbacks=[CommandHandler("cancelar", activity_cancel)],
-    )
 
 def setup_activity_management_handler() -> ConversationHandler:
     return ConversationHandler(
@@ -356,7 +349,7 @@ def setup_activity_management_handler() -> ConversationHandler:
             ],
             SHOWING_ACTIVITY_EDIT_OPTIONS: [
                 CallbackQueryHandler(select_activity_field_to_edit_callback, pattern="^editactivityfield_"),
-                CallbackQueryHandler(select_activity_action_callback, pattern="^mng_act_"), # Botão Voltar
+                CallbackQueryHandler(select_activity_action_callback, pattern="^mng_act_"),
             ],
             AWAITING_ACTIVITY_NEW_VALUE: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, receive_activity_field_update),
@@ -364,9 +357,11 @@ def setup_activity_management_handler() -> ConversationHandler:
             ],
             CONFIRM_ACTIVITY_DELETE: [
                 CallbackQueryHandler(confirm_activity_delete_callback, pattern="^confirmdelete_activity_"),
-                CallbackQueryHandler(select_activity_action_callback, pattern="^mng_act_"), # Botão Cancelar
+                CallbackQueryHandler(select_activity_action_callback, pattern="^mng_act_"),
             ],
         },
         fallbacks=[CommandHandler("cancelar", activity_cancel)],
         per_message=False,
     )
+    
+    

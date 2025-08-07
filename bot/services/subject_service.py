@@ -1,10 +1,17 @@
 # bot/services/subject_service.py
 
+import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import case
 from bot.db.models import Subject, User, Absence, Grade
 from typing import List
-from datetime import time
+from datetime import datetime, time
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 
 def create_subject(db: Session, user: User, name: str, professor: str, day: str, room: str, start_time: time, end_time: time, semestre: int) -> Subject:
     """Cria uma nova matéria, agora com semestre."""
@@ -53,3 +60,41 @@ def delete_subject_by_id(db: Session, subject_id: int) -> bool:
         db.commit()
         return True
     return False
+
+
+
+def bulk_create_subjects(db: Session, user: User, subjects_data: list) -> dict:
+    """
+    Cria múltiplas matérias de uma vez a partir de uma lista de dicionários.
+    Retorna um relatório com sucessos e falhas.
+    """
+    created_count = 0
+    errors = []
+    for index, data in enumerate(subjects_data, 1):
+        try:
+            # Converte os horários de string para time object
+            start_time = datetime.strptime(data['horario_inicio'], '%H:%M').time()
+            end_time = datetime.strptime(data['horario_fim'], '%H:%M').time()
+
+            db_subject = Subject(
+                name=data['nome'],
+                professor=data.get('professor'), # .get() para campos opcionais
+                day_of_week=data['dia_semana'],
+                room=data.get('sala'),
+                start_time=start_time,
+                end_time=end_time,
+                semestre=data.get('semestre'),
+                owner=user
+            )
+            db.add(db_subject)
+            created_count += 1
+        except Exception as e:
+            logger.error(f"Erro ao importar matéria na linha {index}: {e}")
+            errors.append(f"Linha {index} ({data.get('nome', 'N/A')}): {e}")
+
+    if errors:
+        db.rollback() # Se houve qualquer erro, desfaz tudo para não salvar dados parciais
+        return {"success": 0, "errors": errors}
+    else:
+        db.commit() # Se tudo deu certo, salva tudo de uma vez
+        return {"success": created_count, "errors": []}

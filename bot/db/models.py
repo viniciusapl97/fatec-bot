@@ -1,5 +1,3 @@
-# bot/db/models.py
-
 from sqlalchemy import Column, Integer, String, BigInteger, ForeignKey, Date, Numeric, Time
 from sqlalchemy.orm import relationship
 from .base import Base

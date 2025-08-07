@@ -18,7 +18,9 @@ from bot.handlers.common import start, help_command, button_handler, today_comma
 from bot.handlers.subject_handler import list_subjects, setup_subject_handler, setup_management_handler, setup_report_handler
 from bot.handlers.activity_handler import list_activities, setup_activity_handler, setup_activity_management_handler
 from bot.handlers.absence_handler import setup_absence_handler, setup_absence_management_handler, report_absences
-from bot.handlers.grade_handler import setup_grade_handler # Adicionar setup de gerenciamento depois
+from bot.handlers.grade_handler import setup_grade_handler, setup_grade_management_handler
+from bot.handlers.import_handler import setup_import_handler
+from bot.handlers.bug_report_handler import setup_bug_report_handler
 
 # Configura o logging
 logging.basicConfig(
@@ -50,6 +52,7 @@ async def post_init_configuration(application: Application) -> None:
         BotCommand("gerenciarfaltas", "Edita ou exclui registros de faltas"),
         BotCommand("gerenciartrabalhos", "Edita ou exclui trabalhos"),
         BotCommand("gerenciarprovas", "Edita ou exclui provas"),
+        BotCommand("bug", "Reportar um problema ou bug para o desenvolvedor")
     ]
     await application.bot.set_my_commands(commands)
 
@@ -81,6 +84,10 @@ def main() -> None:
     application.add_handler(setup_absence_handler())
     application.add_handler(setup_absence_management_handler())
     application.add_handler(setup_grade_handler())
+    application.add_handler(setup_grade_management_handler())
+    application.add_handler(setup_import_handler())
+    application.add_handler(setup_bug_report_handler())
+    
     
     # --- Handlers de Callback (Botões Genéricos) ---
     application.add_handler(CallbackQueryHandler(button_handler))
