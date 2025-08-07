@@ -2,18 +2,24 @@ import logging
 from datetime import date, datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
-    ContextTypes, ConversationHandler, CommandHandler,
-    MessageHandler, filters, CallbackQueryHandler,
+    ContextTypes,
+    ConversationHandler,
+    CommandHandler,
+    MessageHandler,
+    filters,
+    CallbackQueryHandler,
 )
+
 from bot.db.base import SessionLocal
 from bot.services import user_service, subject_service, absence_service
+from bot.core import dialogs
 
 logger = logging.getLogger(__name__)
 
 # Estados para /faltei
 SELECT_SUBJECT_FOR_ABSENCE, GET_ABSENCE_DATE, GET_ABSENCE_QUANTITY, GET_ABSENCE_NOTES = range(40, 44)
-# Estados para /gerenciarfaltas
-SELECT_SUBJECT_TO_MANAGE, LIST_ABSENCES, CONFIRM_DELETE, AWAIT_NEW_QUANTITY = range(44, 48)
+# Novos estados para /gerenciarfaltas
+SELECT_SUBJECT_TO_MANAGE, AWAITING_RECORD_CHOICE, AWAITING_ACTION_CHOICE, AWAITING_NEW_QUANTITY, CONFIRM_DELETE = range(44, 49)
 
 
 # =============================================================================
@@ -21,7 +27,7 @@ SELECT_SUBJECT_TO_MANAGE, LIST_ABSENCES, CONFIRM_DELETE, AWAIT_NEW_QUANTITY = ra
 # =============================================================================
 
 async def new_absence_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Inicia a conversa para registrar uma falta, pedindo a matéria."""
+    """Inicia a conversa para registrar uma falta (via comando ou botão)."""
     query = update.callback_query
     if query:
         await query.answer()
@@ -34,17 +40,21 @@ async def new_absence_start(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         subjects = subject_service.get_subjects_by_user(db, user)
 
     if not subjects:
-        text = "Você precisa ter matérias cadastradas para registrar uma falta. Use /addmateria."
-        if query: await query.message.reply_text(text)
-        else: await update.message.reply_text(text)
+        text = dialogs.ABSENCE_CREATE_NO_SUBJECTS
+        if query:
+            await query.message.reply_text(text)
+        else:
+            await update.message.reply_text(text)
         return ConversationHandler.END
 
     keyboard = [[InlineKeyboardButton(s.name, callback_data=f"absence_subject_{s.id}")] for s in subjects]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    text = "Para qual matéria você deseja registrar a falta?\n\nEnvie /cancelar para interromper."
-    if query: await query.message.reply_text(text, reply_markup=reply_markup)
-    else: await update.message.reply_text(text, reply_markup=reply_markup)
+    text = dialogs.ABSENCE_CREATE_ASK_SUBJECT
+    if query:
+        await query.message.reply_text(text, reply_markup=reply_markup)
+    else:
+        await update.message.reply_text(text, reply_markup=reply_markup)
 
     return SELECT_SUBJECT_FOR_ABSENCE
 
@@ -60,7 +70,7 @@ async def received_absence_subject(update: Update, context: ContextTypes.DEFAULT
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await query.edit_message_text(
-        text="Quando foi a falta? Clique no botão ou envie a data no formato *DD/MM/AAAA*.",
+        text=dialogs.ABSENCE_CREATE_ASK_DATE,
         reply_markup=reply_markup,
         parse_mode='Markdown'
     )
@@ -74,19 +84,19 @@ async def received_absence_date(update: Update, context: ContextTypes.DEFAULT_TY
     if query:
         await query.answer()
         absence_date_obj = date.today()
-        await query.edit_message_text(text=f"Data selecionada: {absence_date_obj.strftime('%d/%m/%Y')}")
+        await query.edit_message_text(text=dialogs.ABSENCE_CREATE_DATE_SELECTED.format(date=absence_date_obj.strftime('%d/%m/%Y')))
     else:
         date_str = update.message.text
         try:
             absence_date_obj = datetime.strptime(date_str, "%d/%m/%Y").date()
         except ValueError:
-            await update.message.reply_text("Formato de data inválido. 😓\nPor favor, tente novamente no formato *DD/MM/AAAA*.", parse_mode='Markdown')
+            await update.message.reply_text(dialogs.ERROR_INVALID_DATE, parse_mode='Markdown')
             return GET_ABSENCE_DATE
 
     context.user_data['absence_date'] = absence_date_obj
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="Entendido. Quantas aulas/faltas você perdeu nesse dia? (normalmente 2 ou 4)"
+        text=dialogs.ABSENCE_CREATE_ASK_QUANTITY
     )
     return GET_ABSENCE_QUANTITY
 
@@ -96,11 +106,11 @@ async def received_absence_quantity(update: Update, context: ContextTypes.DEFAUL
         quantity = int(update.message.text)
         if quantity <= 0: raise ValueError
     except (ValueError, TypeError):
-        await update.message.reply_text("Por favor, envie um número inteiro e positivo.")
+        await update.message.reply_text(dialogs.ERROR_INVALID_NUMBER_POSITIVE)
         return GET_ABSENCE_QUANTITY
     
     context.user_data['absence_quantity'] = quantity
-    await update.message.reply_text("Deseja adicionar uma observação? (ex: 'atestado médico'). Se não, envie 'não' ou 'pular'.")
+    await update.message.reply_text(dialogs.ABSENCE_CREATE_ASK_NOTES)
     return GET_ABSENCE_NOTES
 
 async def received_absence_notes(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -119,8 +129,12 @@ async def received_absence_notes(update: Update, context: ContextTypes.DEFAULT_T
         absence_service.add_absence(db, user, subject, data['absence_date'], data['absence_quantity'], notes)
         
         await update.message.reply_text(
-            f"✅ {data['absence_quantity']} falta(s) registrada(s) para *{subject.name}*.\n"
-            f"Total atual: *{subject.total_absences}* faltas.", parse_mode='Markdown'
+            dialogs.ABSENCE_CREATE_SUCCESS.format(
+                quantity=data['absence_quantity'],
+                subject_name=subject.name,
+                total_absences=subject.total_absences
+            ), 
+            parse_mode='Markdown'
         )
 
     context.user_data.clear()
@@ -129,18 +143,19 @@ async def received_absence_notes(update: Update, context: ContextTypes.DEFAULT_T
 async def absence_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Cancela a operação atual de faltas."""
     if update.callback_query:
-        await update.callback_query.edit_message_text("Operação cancelada.")
+        await update.callback_query.edit_message_text(dialogs.OPERATION_CANCELED)
     else:
-        await update.message.reply_text("Operação cancelada.")
+        await update.message.reply_text(dialogs.OPERATION_CANCELED)
     context.user_data.clear()
     return ConversationHandler.END
-
+    
+    
 # =============================================================================
-# Seção 2: Handler de Conversa para /gerenciarfaltas (Gerenciamento)
+# Seção 2: Relatório e Gerenciamento de Faltas
 # =============================================================================
 
-async def manage_absences_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Pede para o usuário escolher uma matéria para gerenciar as faltas (via comando ou botão)."""
+async def report_absences(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Gera um relatório com o total de faltas para cada matéria."""
     query = update.callback_query
     if query:
         await query.answer()
@@ -153,116 +168,144 @@ async def manage_absences_start(update: Update, context: ContextTypes.DEFAULT_TY
         subjects = subject_service.get_subjects_by_user(db, user)
 
     if not subjects:
-        text = "Você não tem matérias para gerenciar faltas."
-        if query:
-            await query.edit_message_text(text=text)
-        else:
-            await update.message.reply_text(text)
+        message = dialogs.ABSENCE_REPORT_NO_SUBJECTS
+        if query: await query.edit_message_text(text=message)
+        else: await update.message.reply_text(text=message)
+        return
+
+    message = dialogs.ABSENCE_REPORT_HEADER
+    for subject in subjects:
+        message += dialogs.ABSENCE_REPORT_ITEM.format(subject_name=subject.name, total_absences=subject.total_absences)
+
+    if query:
+        await query.edit_message_text(message, parse_mode='HTML')
+    else:
+        await update.message.reply_html(message)
+
+
+async def manage_absences_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Pede para o usuário escolher uma matéria para gerenciar as faltas."""
+    query = update.callback_query
+    if query:
+        await query.answer()
+        telegram_user = query.from_user
+    else:
+        telegram_user = update.effective_user
+
+    with SessionLocal() as db:
+        user, _ = user_service.get_or_create_user(db, telegram_user.id, telegram_user.first_name, telegram_user.username)
+        subjects = subject_service.get_subjects_by_user(db, user)
+
+    if not subjects:
+        text = dialogs.ABSENCE_MANAGE_NO_SUBJECTS
+        if query: await query.edit_message_text(text=text)
+        else: await update.message.reply_text(text)
         return ConversationHandler.END
 
     keyboard = [[InlineKeyboardButton(f"{s.name} ({s.total_absences} faltas)", callback_data=f"mng_abs_subj_{s.id}")] for s in subjects]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    text = "Escolha uma matéria para ver o histórico de faltas:"
-
-    if query:
-        await query.edit_message_text(text, reply_markup=reply_markup)
-    else:
-        await update.message.reply_text(text, reply_markup=reply_markup)
+    text = dialogs.ABSENCE_MANAGE_PROMPT
+    
+    if query: await query.edit_message_text(text, reply_markup=reply_markup)
+    else: await update.message.reply_text(text, reply_markup=reply_markup)
         
     return SELECT_SUBJECT_TO_MANAGE
 
-async def list_absences_for_subject(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def show_numbered_absences(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Mostra a lista numerada de faltas e pede para o usuário escolher um número."""
     query = update.callback_query
     await query.answer()
     subject_id = int(query.data.split('_')[-1])
-    context.user_data['subject_id_for_absence_mng'] = subject_id
 
     with SessionLocal() as db:
         subject = subject_service.get_subject_by_id(db, subject_id)
         absences = absence_service.get_absences_by_subject(db, subject)
 
     if not absences:
-        await query.edit_message_text(f"Nenhum registro de falta encontrado para *{subject.name}*.", parse_mode='Markdown')
+        await query.edit_message_text(dialogs.ABSENCE_MANAGE_NO_RECORDS.format(subject_name=subject.name), parse_mode='HTML')
         return ConversationHandler.END
 
-    message = f"Histórico de faltas para *{subject.name}* (Total: {subject.total_absences}):\n"
-    keyboard = []
-    for absence in absences:
+    message = f"Histórico de faltas para <b>{subject.name}</b>:\n\n"
+    absence_ids = []
+    for i, absence in enumerate(absences, 1):
+        absence_ids.append(absence.id)
         date_str = absence.absence_date.strftime('%d/%m/%Y')
-        notes_str = f" ({absence.notes[:20]}...)" if absence.notes else ""
-        keyboard.append(
-            [InlineKeyboardButton(f"Falta em {date_str} (Qtd: {absence.quantity}){notes_str}", callback_data=f"select_absence_{absence.id}")]
-        )
+        message += f"<b>{i}</b> - {date_str} - {absence.quantity} Falta(s)\n"
+        if absence.notes:
+            message += f"Obs: {absence.notes}\n"
+        message += dialogs.SEPARATOR
+
+    message += "\nPor favor, envie o <b>número</b> do registro que deseja gerenciar."
     
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await query.edit_message_text(message, reply_markup=reply_markup, parse_mode='Markdown')
-    return LIST_ABSENCES
-
-async def select_absence_action(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    query = update.callback_query
-    await query.answer()
-    absence_id = int(query.data.split('_')[-1])
-    context.user_data['absence_id_to_manage'] = absence_id
+    # Salva a lista de IDs para referência futura
+    context.user_data['absence_ids_map'] = absence_ids
     
-    keyboard = [
-        [
-            InlineKeyboardButton("✏️ Editar Quantidade", callback_data=f"edit_absence_{absence_id}"),
-            InlineKeyboardButton("🗑️ Excluir Registro", callback_data=f"delete_absence_{absence_id}")
-        ],
-        [InlineKeyboardButton("« Voltar", callback_data=f"mng_abs_subj_{context.user_data['subject_id_for_absence_mng']}")]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await query.edit_message_text("O que deseja fazer com este registro de falta?", reply_markup=reply_markup)
-    return LIST_ABSENCES
+    await query.edit_message_text(message, parse_mode='HTML')
+    return AWAITING_RECORD_CHOICE
 
-async def handle_absence_action(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    query = update.callback_query
-    await query.answer()
-    action, absence_id_str = query.data.split('_', 2)[1:]
-    absence_id = int(absence_id_str)
+async def received_record_choice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Recebe o número do registro e pergunta a ação (editar ou excluir)."""
+    try:
+        choice = int(update.message.text)
+        absence_ids_map = context.user_data['absence_ids_map']
+        if not (1 <= choice <= len(absence_ids_map)):
+            raise ValueError
+    except (ValueError, TypeError):
+        await update.message.reply_text("Número inválido. Por favor, envie um número da lista acima.")
+        return AWAITING_RECORD_CHOICE
 
-    if action == "delete":
-        keyboard = [[
-            InlineKeyboardButton("✅ Sim, excluir", callback_data=f"confirm_delete_absence_{absence_id}"),
-            InlineKeyboardButton("❌ Cancelar", callback_data=f"select_absence_{absence_id}")
-        ]]
-        await query.edit_message_text("Tem certeza que deseja excluir este registro?", reply_markup=InlineKeyboardMarkup(keyboard))
+    # Converte a escolha do usuário (ex: 1) para o ID real do banco (ex: 17)
+    selected_absence_id = absence_ids_map[choice - 1]
+    context.user_data['absence_id_to_manage'] = selected_absence_id
+
+    text = "O que você deseja fazer?\n\n<b>1</b> - Editar a quantidade\n<b>2</b> - Excluir o registro"
+    await update.message.reply_text(text, parse_mode='HTML')
+    return AWAITING_ACTION_CHOICE
+
+async def received_action_choice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Recebe a ação (1 ou 2) e direciona para o próximo passo."""
+    choice = update.message.text
+    if choice == '1': # Editar
+        await update.message.reply_text(dialogs.ABSENCE_MANAGE_ASK_NEW_QUANTITY)
+        return AWAITING_NEW_QUANTITY
+    elif choice == '2': # Excluir
+        await update.message.reply_text("Tem certeza? Digite <b>SIM</b> para confirmar a exclusão.", parse_mode='HTML')
         return CONFIRM_DELETE
-    
-    elif action == "edit":
-        await query.message.reply_text("Qual a nova quantidade para este registro de falta?")
-        return AWAIT_NEW_QUANTITY
+    else:
+        await update.message.reply_text("Opção inválida. Por favor, envie <b>1</b> para editar ou <b>2</b> para excluir.", parse_mode='HTML')
+        return AWAITING_ACTION_CHOICE
 
-async def confirm_delete_absence(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    query = update.callback_query
-    await query.answer()
-    absence_id = int(query.data.split('_')[-1])
-    with SessionLocal() as db:
-        absence = absence_service.get_absence_by_id(db, absence_id)
-        subject_id = absence.subject.id
-        absence_service.delete_absence_by_id(db, absence_id)
-    
-    await query.edit_message_text("Registro de falta excluído com sucesso.")
-    query.data = f"mng_abs_subj_{subject_id}"
-    return await list_absences_for_subject(update, context)
 
 async def received_new_quantity(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Recebe a nova quantidade e finaliza."""
     try:
         new_quantity = int(update.message.text)
         if new_quantity <= 0: raise ValueError
     except (ValueError, TypeError):
-        await update.message.reply_text("Por favor, envie um número inteiro positivo.")
-        return AWAIT_NEW_QUANTITY
+        await update.message.reply_text(dialogs.ERROR_INVALID_NUMBER_POSITIVE)
+        return AWAITING_NEW_QUANTITY
 
     absence_id = context.user_data['absence_id_to_manage']
     with SessionLocal() as db:
-        absence = absence_service.update_absence_quantity(db, absence_id, new_quantity)
-        subject_id = absence.subject.id
+        absence_service.update_absence_quantity(db, absence_id, new_quantity)
     
-    await update.message.reply_text("Quantidade de faltas atualizada com sucesso!")
-    
-    fake_update = type('Update', (), {'callback_query': type('CallbackQuery', (), {'data': f"mng_abs_subj_{subject_id}", 'answer': (lambda: None), 'message': update.message})()})()
-    return await list_absences_for_subject(fake_update, context)
+    await update.message.reply_text(dialogs.ABSENCE_MANAGE_UPDATE_SUCCESS)
+    context.user_data.clear()
+    return ConversationHandler.END
+
+async def confirm_text_delete(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Recebe a confirmação de exclusão por texto e finaliza."""
+    if update.message.text.upper() == 'SIM':
+        absence_id = context.user_data['absence_id_to_manage']
+        with SessionLocal() as db:
+            absence_service.delete_absence_by_id(db, absence_id)
+        await update.message.reply_text(dialogs.ABSENCE_MANAGE_DELETE_SUCCESS)
+        context.user_data.clear()
+        return ConversationHandler.END
+    else:
+        await update.message.reply_text("Exclusão cancelada.")
+        context.user_data.clear()
+        return ConversationHandler.END
 
 
 # =============================================================================
@@ -286,57 +329,36 @@ def setup_absence_handler() -> ConversationHandler:
             GET_ABSENCE_NOTES: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_absence_notes)],
         },
         fallbacks=[CommandHandler("cancelar", absence_cancel)],
+        per_message=False
     )
 
 def setup_absence_management_handler() -> ConversationHandler:
+    """Cria o ConversationHandler para /gerenciarfaltas com base em texto."""
     return ConversationHandler(
         entry_points=[
             CommandHandler("gerenciarfaltas", manage_absences_start),
-            CallbackQueryHandler(manage_absences_start, pattern="^start_manage_absences$")
+            # Removido o entry_point de botão, pois o comando agora é explícito
         ],
         states={
-            SELECT_SUBJECT_TO_MANAGE: [CallbackQueryHandler(list_absences_for_subject, pattern="^mng_abs_subj_")],
-            LIST_ABSENCES: [
-                CallbackQueryHandler(select_absence_action, pattern="^select_absence_"),
-                CallbackQueryHandler(handle_absence_action, pattern="^(edit_absence_|delete_absence_)"),
-                CallbackQueryHandler(list_absences_for_subject, pattern="^mng_abs_subj_"),
-            ],
-            CONFIRM_DELETE: [
-                CallbackQueryHandler(confirm_delete_absence, pattern="^confirm_delete_absence_"),
-                CallbackQueryHandler(select_absence_action, pattern="^select_absence_"),
-            ],
-            AWAIT_NEW_QUANTITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_new_quantity)],
+            SELECT_SUBJECT_TO_MANAGE: [CallbackQueryHandler(show_numbered_absences, pattern="^mng_abs_subj_")],
+            AWAITING_RECORD_CHOICE: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_record_choice)],
+            AWAITING_ACTION_CHOICE: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_action_choice)],
+            AWAITING_NEW_QUANTITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_new_quantity)],
+            CONFIRM_DELETE: [MessageHandler(filters.TEXT & ~filters.COMMAND, confirm_text_delete)],
         },
         fallbacks=[CommandHandler("cancelar", absence_cancel)],
         per_message=False,
     )
     
-async def report_absences(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Gera um relatório com o total de faltas para cada matéria."""
+    
+    
+    
+async def debug_callback_query(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Função temporária para capturar qualquer clique de botão não tratado."""
     query = update.callback_query
-    if query:
-        await query.answer()
-        telegram_user = query.from_user
-    else:
-        telegram_user = update.effective_user
-
-    with SessionLocal() as db:
-        user, _ = user_service.get_or_create_user(db, telegram_user.id, telegram_user.first_name, telegram_user.username)
-        subjects = subject_service.get_subjects_by_user(db, user)
-
-    if not subjects:
-        message = "Você não tem matérias cadastradas para ver um relatório de faltas."
-        if query: await query.edit_message_text(text=message)
-        else: await update.message.reply_text(text=message)
-        return
-
-    message = "📊 *Relatório de Faltas:*\n\n"
-    for subject in subjects:
-        message += f"▪️ *{subject.name}:* {subject.total_absences} falta(s)\n"
-
-    if query:
-        # Edita a mensagem do menu para se transformar no relatório
-        await query.edit_message_text(message, parse_mode='HTML')
-    else:
-        # Responde ao comando /faltas
-        await update.message.reply_html(message)
+    await query.answer("DEBUG: Clique capturado pelo handler geral.")
+    print("\n--- DEBUG: COLETOR GERAL CAPTUROU UM CLIQUE ---")
+    print(f"Callback Data recebido: '{query.data}'")
+    print("Isso significa que o estado AWAITING_ACTION está correto, mas os patterns dos handlers específicos falharam.")
+    print("--- FIM DO DEBUG ---\n")
+    # Não retorna nada para não mudar de estado

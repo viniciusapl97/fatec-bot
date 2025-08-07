@@ -1,5 +1,3 @@
-# bot/core/settings.py
-
 import os
 from dotenv import load_dotenv
 
@@ -11,7 +9,7 @@ if not TELEGRAM_TOKEN:
     raise ValueError("Variável de ambiente TELEGRAM_TOKEN não encontrada.")
 
 # --- Configurações do Banco de Dados (PostgreSQL) ---
-# Lógica flexível: Se a DATABASE_URL existe (como na Render/Railway), use-a.
+# Lógica flexível: Se a DATABASE_URL existe, use-a.
 # Senão, monte-a a partir das variáveis individuais (para desenvolvimento local).
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -42,3 +40,11 @@ if not DATABASE_URL:
         f"postgresql://{required_vars['DB_USER']}:{required_vars['DB_PASSWORD']}@"
         f"{required_vars['DB_HOST']}:{required_vars['DB_PORT']}/{required_vars['DB_NAME']}"
     )
+    
+    
+    # --- Configurações de Email ---
+EMAIL_HOST = os.getenv("EMAIL_HOST")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
+EMAIL_SENDER = os.getenv("EMAIL_SENDER")
+EMAIL_SENDER_PASSWORD = os.getenv("EMAIL_SENDER_PASSWORD")
+EMAIL_RECEIVER = os.getenv("EMAIL_RECEIVER")
