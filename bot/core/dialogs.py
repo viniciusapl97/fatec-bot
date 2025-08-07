@@ -96,7 +96,15 @@ SUBJECT_CREATE_SUCCESS = "✅ Matéria '<b>{subject_name}</b>' cadastrada com su
 SUBJECT_LIST_HEADER = "📅 <b>Sua Grade Horária Semanal:</b>\n\n"
 SUBJECT_LIST_NO_SUBJECTS = "Você ainda não cadastrou nenhuma matéria. Use /addmateria para começar."
 SUBJECT_LIST_DAY_HEADER = "<b>{day}:</b>\n"
-SUBJECT_LIST_ITEM = "   <code>{st}</code>–<code>{et}</code> 📚 <b>{name}</b> (Sala: {room})\n"
+SUBJECT_LIST_ITEM = (
+    "   <code>{st}</code>–<code>{et}</code>  <b>{name}</b> - Prof.(a) {professor}\n"
+    "   (Sala: {room})\n"
+)
+
+
+SUBJECT_LIST_GRADES_LINE = "       <i>Notas:</i> {grades}\n"
+SUBJECT_LIST_ABSENCES_LINE = "       <i>Faltas:</i> {absences}\n"
+SUBJECT_LIST_SEPARATOR = "—" * 20 + "\n"
 SUBJECT_LIST_GRADES_PREFIX = "      <b>Notas:</b> {grades}\n"
 SUBJECT_LIST_ABSENCES_PREFIX = "      <b>Faltas:</b> {absences}\n"
 
