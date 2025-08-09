@@ -234,7 +234,7 @@ IMPORT_FAILURE = (
 # =============================================================================
 # FLUXO FATEC (/fatec)
 # =============================================================================
-FATEC_ONBOARDING_START = "Olá, futuro(a) FATECano(a)! Vamos configurar sua grade horária.\n\nPrimeiro, escolha seu curso:"
+FATEC_ONBOARDING_START = "Olá! Vamos configurar sua grade horária com as opções de curso da FATEC SBC.\n\nPrimeiro, escolha seu curso:"
 FATEC_ONBOARDING_ASK_SHIFT = "Ótima escolha! Agora, qual o seu turno?"
 FATEC_ONBOARDING_ASK_GRADE_TYPE = "Entendido. Como você prefere montar sua grade?\n\nA grade personalizada é ideal para quem tem DPs ou adiantou matérias."
 FATEC_ONBOARDING_ASK_IDEAL_SEMESTER = "Perfeito! Agora, por favor, selecione o seu semestre:"
