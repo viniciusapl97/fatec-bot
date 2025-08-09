@@ -23,3 +23,17 @@ def get_or_create_user(db: Session, user_id: int, first_name: str, username: str
         is_new = False
         
     return db_user, is_new
+
+
+
+def delete_user_by_id(db: Session, user_id: int) -> bool:
+    """
+    Busca um usuário pelo seu ID do Telegram e o remove do banco de dados.
+    A remoção em cascata apagará todos os dados associados a ele.
+    """
+    db_user = db.query(User).filter(User.user_id == user_id).first()
+    if db_user:
+        db.delete(db_user)
+        db.commit()
+        return True
+    return False

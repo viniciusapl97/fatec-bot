@@ -43,32 +43,45 @@ WEEK_ACTIVITY_LINE = " • <b>{date_str}:</b> {icon} {name} ({subject_name})\n"
 
 # Ajuda
 HELP_TEXT = (
-    "Olá! Sou seu mano JOVIS. Aqui está um resumo de tudo que posso fazer:\n\n"
-    "💡 <b>Dica:</b> Tenho um menu interativo com atalhos para algumas funções. "
+    "Olá! Eu sou seu assistente de estudos. Aqui está um resumo de tudo que posso fazer:\n\n"
+    "💡 <b>Dica Principal:</b> A melhor forma de me usar é através do menu interativo. "
     "Basta enviar /start para acessá-lo a qualquer momento!\n\n"
     "<b>Comandos Diretos:</b>\n"
     "— — — — — — — — — —\n\n"
+    "🚀 <b>Configuração Rápida</b>\n"
+    "• /fatec - Configura sua grade horária completa de um curso da Fatec S.B. de forma automática.\n\n"
+
     "📚 <b>Matérias</b>\n"
     "• /grade - Exibe sua grade horária completa.\n"
-    "• /addmateria - Cadastra uma nova matéria.\n"
-    "• /gerenciarmaterias - Edita ou exclui matérias.\n"
+    "• /addmateria - Cadastra uma nova matéria manualmente.\n"
+    "• /gerenciarmaterias - Permite editar ou excluir matérias.\n"
     "• /relatorio - Gera um relatório detalhado de uma matéria.\n\n"
+
     "🗓️ <b>Trabalhos e Provas</b>\n"
-    "• /calendario - Lista seus trabalhos e provas.\n"
-    "• /addtrabalho - Adiciona um novo trabalho.\n"
-    "• /addprova - Adiciona uma nova prova.\n"
+    "• /calendario - Lista todos os seus trabalhos e provas.\n"
+    "• /addtrabalho - Adiciona um novo trabalho na sua agenda.\n"
+    "• /addprova - Adiciona uma nova prova na sua agenda.\n"
     "• /gerenciartrabalhos - Edita ou exclui trabalhos.\n"
     "• /gerenciarprovas - Edita ou exclui provas.\n\n"
+
     "✖️ <b>Faltas e 🎓 Notas</b>\n"
     "• /faltei - Registra uma ou mais faltas.\n"
     "• /gerenciarfaltas - Edita ou exclui registros de faltas.\n"
     "• /addnota - Lança uma nova nota.\n"
     "• /gerenciarnotas - Edita ou exclui notas.\n\n"
-    "⚙️ <b>Geral</b>\n"
+
+    "⚡ <b>Resumos Rápidos</b>\n"
+    "• /hoje - Mostra um resumo das aulas e atividades do dia.\n"
+    "• /semana - Lista as atividades dos próximos 7 dias.\n\n"
+    
+    "⚙️ <b>Comandos Gerais</b>\n"
     "• /start - Mostra o menu principal.\n"
     "• /help - Mostra esta mensagem de ajuda.\n"
-    "• /cancelar - <b>(Importante!)</b> Interrompe qualquer operação.\n"
-    "• /bug - Reportar um problema ou bug para o desenvolvedor."
+    "• /bug - Reportar um problema para o desenvolvedor.\n"
+    "• /import - (Avançado) Cadastra matérias em massa a partir de um arquivo JSON.\n"
+    "• /deletardados - Apaga todos os seus dados do bot.\n"
+    "• /privacidade - Mostra a política de privacidade.\n"
+    "• /cancelar - <b>(Importante!)</b> Interrompe qualquer operação."
 )
 
 # =============================================================================
@@ -237,3 +250,20 @@ FATEC_ONBOARDING_NO_CONFLICT_ASK_SEMESTER = "Ótima escolha! Nenhum conflito de 
 FATEC_ONBOARDING_INVALID_SEMESTER = "Semestre inválido. O cadastro será feito sem essa informação."
 FATEC_ONBOARDING_FINALIZING_CUSTOM = "Finalizando o cadastro da sua grade personalizada..."
 FATEC_ONBOARDING_CUSTOM_SUCCESS = "✅ Tudo pronto! Sua grade personalizada com {count} matérias foi cadastrada com sucesso. Use /grade para ver o resultado."
+
+
+
+
+# =============================================================================
+# EXCLUSÃO DE DADOS (/deletardados)
+# =============================================================================
+DELETE_DATA_WARNING = (
+    "⚠️ <b>ATENÇÃO: AÇÃO IRREVERSÍVEL</b> ⚠️\n\n"
+    "Você está prestes a apagar <b>TODOS</b> os seus dados do Jovis. "
+    "Isso inclui sua grade horária, todas as atividades, faltas e notas cadastradas.\n\n"
+    "Esta ação não pode ser desfeita.\n\n"
+    "Para confirmar que você entende e deseja prosseguir, por favor, digite a frase exata abaixo:\n"
+    "<code>excluir todos os meus dados</code>"
+)
+DELETE_DATA_CONFIRMATION_INVALID = "A confirmação está incorreta. A operação foi cancelada para sua segurança."
+DELETE_DATA_SUCCESS = "Todos os seus dados foram permanentemente removidos. Obrigado por usar o Jovis. Adeus! 👋"
