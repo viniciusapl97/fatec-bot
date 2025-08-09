@@ -38,7 +38,7 @@ Usei uma organização em camadas para separar responsabilidades e facilitar man
 Telegram
    ↓
 Handlers  →  Services  →  Models
-             ↓           ↓
+             ↓           
            DB / Core
 ```
 Todos os textos enviados pelo bot estão centralizados em `bot/core/dialogs.py`, então personalizar a “voz” do Jovis é simples.
@@ -127,7 +127,6 @@ Todos os textos enviados pelo bot estão centralizados em `bot/core/dialogs.py`,
 ```
 ### Dicas rápidas
 * **Personalização:** ajuste a “voz” do bot em `bot/core/dialogs.py`.
-* **Novas features:** dá para evoluir para notificações, cálculo de médias, ou integrar IA mantendo o padrão atual.
 * **Testes:** antes de mandar para `main`, teste localmente com o bot de testes.
 
 Curtiu a ideia? Se algo estiver confuso ou você tiver uma forma melhor de fazer, abre uma *issue* ou manda bala num *PR*. 
