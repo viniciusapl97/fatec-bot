@@ -1,0 +1,1654 @@
+{
+  "courses": [
+    {
+      "name": "Informática para Negócios",
+      "shifts": [
+        {
+          "name": "Noturno",
+          "subjects": [
+            {
+              "semester": 1,
+              "subject_name": "Informática e Negócios",
+              "professor_name": "SIMONE",
+              "day_of_week": "Segunda",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 14"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Sociedade, Tecnologia e Inovação",
+              "professor_name": "JOVELINO",
+              "day_of_week": "Terça",
+              "start_time": "19:00",
+              "end_time": "20:40",
+              "room": "Sala 23"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Empreendedorismo",
+              "professor_name": "JOVELINO",
+              "day_of_week": "Terça",
+              "start_time": "20:50",
+              "end_time": "22:30",
+              "room": "Sala 23"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Matemática Discreta",
+              "professor_name": "JEDIANE",
+              "day_of_week": "Quarta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 23"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Comunicação e Expressão",
+              "professor_name": "JACY",
+              "day_of_week": "Quinta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 04"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Espanhol I",
+              "professor_name": "BIANCA",
+              "day_of_week": "Sexta",
+              "start_time": "19:00",
+              "end_time": "20:40",
+              "room": "Sala 19"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Inglês I",
+              "professor_name": "DARLI",
+              "day_of_week": "Sexta",
+              "start_time": "20:50",
+              "end_time": "22:30",
+              "room": "Sala 19"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Administração Geral",
+              "professor_name": "ANNA",
+              "day_of_week": "Sábado",
+              "start_time": "09:40",
+              "end_time": "13:00",
+              "room": "Sala 23"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Inglês II",
+              "professor_name": "DARLI",
+              "day_of_week": "Segunda",
+              "start_time": "19:00",
+              "end_time": "20:40",
+              "room": "Sala 05"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Fundamentos de Cálculo",
+              "professor_name": "GISELI",
+              "day_of_week": "Segunda",
+              "start_time": "20:50",
+              "end_time": "22:30",
+              "room": "Sala 07"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Algoritmos e Programação de Computadores",
+              "professor_name": "MARCIA",
+              "day_of_week": "Terça",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 02"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Sistemas Operacionais",
+              "professor_name": "ERASMO",
+              "day_of_week": "Quarta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 04"
+            },
+            {
+              "semester": 2,
+              "subject_name": "S istemas de Informação",
+              "professor_name": "LUCAS",
+              "day_of_week": "Quinta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 06"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Contabilidade",
+              "professor_name": "ADILSON",
+              "day_of_week": "Sexta",
+              "start_time": "19:00",
+              "end_time": "20:40",
+              "room": "Sala 06"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Espanhol II",
+              "professor_name": "BIANCA",
+              "day_of_week": "Sexta",
+              "start_time": "20:50",
+              "end_time": "22:30",
+              "room": "Sala 19"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Economia",
+              "professor_name": "NILZA",
+              "day_of_week": "Sábado",
+              "start_time": "09:40",
+              "end_time": "13:00",
+              "room": "Sala 04"
+            },
+            {
+              "semester": 3,
+              "subject_name": "Direito Empresarial",
+              "professor_name": "NIVEA",
+              "day_of_week": "Segunda",
+              "start_time": "19:00",
+              "end_time": "20:40",
+              "room": "Lab. 21-B"
+            },
+            {
+              "semester": 3,
+              "subject_name": "Banco de Dados",
+              "professor_name": "SUELI",
+              "day_of_week": "Terça",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 14"
+            },
+            {
+              "semester": 3,
+              "subject_name": "Estrutura de dados",
+              "professor_name": "ANDERSON",
+              "day_of_week": "Quarta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 03"
+            },
+            {
+              "semester": 3,
+              "subject_name": "Linguagem de Programação I",
+              "professor_name": "RODOLFO",
+              "day_of_week": "Quinta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 02"
+            },
+            {
+              "semester": 3,
+              "subject_name": "Gestão de Equipes",
+              "professor_name": "OKANO",
+              "day_of_week": "Sexta",
+              "start_time": "19:00",
+              "end_time": "20:40",
+              "room": "Sala 04"
+            },
+            {
+              "semester": 3,
+              "subject_name": "Matemática Financeira",
+              "professor_name": "ADILSON",
+              "day_of_week": "Sexta",
+              "start_time": "20:50",
+              "end_time": "22:30",
+              "room": "Sala 06"
+            },
+            {
+              "semester": 3,
+              "subject_name": "Engenharia de Software",
+              "professor_name": "EDITAL",
+              "day_of_week": "Sábado",
+              "start_time": "07:40",
+              "end_time": "11:20",
+              "room": "Lab. 02"
+            },
+            {
+              "semester": 3,
+              "subject_name": "Inglês III",
+              "professor_name": "EDITAL",
+              "day_of_week": "Sábado",
+              "start_time": "11:20",
+              "end_time": "13:00",
+              "room": "Lab. 02"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Linguagens de Programação II",
+              "professor_name": "MÁRCIA",
+              "day_of_week": "Segunda",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 02"
+            },
+            {
+              "semester": 4,
+              "subject_name": "M.P.C.T.",
+              "professor_name": "JACY",
+              "day_of_week": "Terça",
+              "start_time": "19:00",
+              "end_time": "20:40",
+              "room": "Sala 19"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Gestão Qual. e Ambiental",
+              "professor_name": "ANNA",
+              "day_of_week": "Terça",
+              "start_time": "20:50",
+              "end_time": "22:30",
+              "room": "Sala 06"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Administração de Banco de Dados",
+              "professor_name": "JOSÉ PRATA",
+              "day_of_week": "Quarta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 14"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Estatística",
+              "professor_name": "JEDIANE",
+              "day_of_week": "Quinta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 07"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Redes de Computadores",
+              "professor_name": "ISMAEL",
+              "day_of_week": "Sexta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 15"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Inter. Humano Computador",
+              "professor_name": "DOUGLAS",
+              "day_of_week": "Sábado",
+              "start_time": "07:40",
+              "end_time": "09:20",
+              "room": "Lab. 15"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Inglês IV",
+              "professor_name": "ANA PAULA",
+              "day_of_week": "Sábado",
+              "start_time": "09:40",
+              "end_time": "11:20",
+              "room": "Lab. 15"
+            },
+            {
+              "semester": 5,
+              "subject_name": "Marketing",
+              "professor_name": "CLAUDEMIR",
+              "day_of_week": "Segunda",
+              "start_time": "19:00",
+              "end_time": "20:40",
+              "room": "Sala 07"
+            },
+            {
+              "semester": 5,
+              "subject_name": "Gestão qualid. de software",
+              "professor_name": "DOUGLAS",
+              "day_of_week": "Segunda",
+              "start_time": "20:50",
+              "end_time": "22:30",
+              "room": "Lab. 03"
+            },
+            {
+              "semester": 5,
+              "subject_name": "Fundamentos de Gestão de Projetos",
+              "professor_name": "ROSANGELA",
+              "day_of_week": "Terça",
+              "start_time": "19:00",
+              "end_time": "20:40",
+              "room": "Sala 08"
+            },
+            {
+              "semester": 5,
+              "subject_name": "Inglês V",
+              "professor_name": "DARLI",
+              "day_of_week": "Terça",
+              "start_time": "20:50",
+              "end_time": "22:30",
+              "room": "Sala 05"
+            },
+            {
+              "semester": 5,
+              "subject_name": "Gestão Financeira",
+              "professor_name": "NILZA",
+              "day_of_week": "Quarta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 08"
+            },
+            {
+              "semester": 5,
+              "subject_name": "Segurança de Sistemas de Informação",
+              "professor_name": "DOUGLAS",
+              "day_of_week": "Quinta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 14"
+            },
+            {
+              "semester": 5,
+              "subject_name": "Pesquisa Operacional",
+              "professor_name": "LILIAN",
+              "day_of_week": "Sexta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 12-A"
+            },
+            {
+              "semester": 5,
+              "subject_name": "Linguagem de Programação III",
+              "professor_name": "DOUGLAS",
+              "day_of_week": "Sábado",
+              "start_time": "09:40",
+              "end_time": "13:00",
+              "room": "Lab. 15"
+            },
+            {
+              "semester": 6,
+              "subject_name": "Gestão e Operação por Processos",
+              "professor_name": "SUELI",
+              "day_of_week": "Segunda",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 12-A"
+            },
+            {
+              "semester": 6,
+              "subject_name": "TPG",
+              "professor_name": "SAMARIS",
+              "day_of_week": "Terça",
+              "start_time": "19:00",
+              "end_time": "20:40",
+              "room": "Lab. 03"
+            },
+            {
+              "semester": 6,
+              "subject_name": "TPG",
+              "professor_name": "SAMARIS",
+              "day_of_week": "Terça",
+              "start_time": "19:00",
+              "end_time": "20:40",
+              "room": "Lab. 03"
+            },
+            {
+              "semester": 6,
+              "subject_name": "Governança em TI",
+              "professor_name": "ROSANGELA",
+              "day_of_week": "Terça",
+              "start_time": "20:50",
+              "end_time": "22:30",
+              "room": "Lab. 03"
+            },
+            {
+              "semester": 6,
+              "subject_name": "Multimídia e Hipermídia",
+              "professor_name": "DOUGLAS",
+              "day_of_week": "Quarta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 12-A"
+            },
+            {
+              "semester": 6,
+              "subject_name": "Gestão Planej. Peq. Empresa",
+              "professor_name": "JOÃO",
+              "day_of_week": "Quinta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 08"
+            },
+            {
+              "semester": 6,
+              "subject_name": "Inglês VI",
+              "professor_name": "DARLI",
+              "day_of_week": "Sexta",
+              "start_time": "19:00",
+              "end_time": "20:40",
+              "room": "Sala 05"
+            },
+            {
+              "semester": 6,
+              "subject_name": "Fundamentos de Auditoria",
+              "professor_name": "OKANO",
+              "day_of_week": "Sexta",
+              "start_time": "20:50",
+              "end_time": "22:30",
+              "room": "Sala 21-B"
+            },
+            {
+              "semester": 6,
+              "subject_name": "Sistemas de Gestão da Produção e Logística",
+              "professor_name": "MARCELO",
+              "day_of_week": "Sábado",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": null
+            }
+          ]
+        },
+        {
+          "name": "Matutino",
+          "subjects": [
+            {
+              "semester": 1,
+              "subject_name": "Inglês I",
+              "professor_name": "DARLI",
+              "day_of_week": "Segunda",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 05"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Matemática Discreta",
+              "professor_name": "JEDIANE",
+              "day_of_week": "Terça",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 23"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Informática e Negócios",
+              "professor_name": "SIMONE",
+              "day_of_week": "Quarta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Lab. 14"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Empreendedorismo",
+              "professor_name": "SAMUEL",
+              "day_of_week": "Quinta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 06"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Administração Geral",
+              "professor_name": "ANNA",
+              "day_of_week": "Sexta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 23"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Espanhol II",
+              "professor_name": "BIANCA",
+              "day_of_week": "Segunda",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 04"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Sistemas de Informação",
+              "professor_name": "SAMARIS",
+              "day_of_week": "Terça",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Lab. 14"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Economia",
+              "professor_name": "JOVELINO",
+              "day_of_week": "Quarta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 04"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Algoritmos e Programação de Computadores",
+              "professor_name": "MÁRCIA",
+              "day_of_week": "Quinta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Lab. 02"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Sistemas Operacionais",
+              "professor_name": "ERASMO",
+              "day_of_week": "Sexta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 04"
+            },
+            {
+              "semester": 3,
+              "subject_name": "Banco de Dados",
+              "professor_name": "SUELI",
+              "day_of_week": "Segunda",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Lab. 14"
+            },
+            {
+              "semester": 3,
+              "subject_name": "Direito Empresarial",
+              "professor_name": "GISELI",
+              "day_of_week": "Terça",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 07"
+            },
+            {
+              "semester": 3,
+              "subject_name": "Ling uagem de Programação I",
+              "professor_name": "CARLOS VAZ",
+              "day_of_week": "Quarta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Lab. 15"
+            },
+            {
+              "semester": 3,
+              "subject_name": "Engenharia de",
+              "professor_name": "FABIO E.",
+              "day_of_week": "Quinta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": null
+            },
+            {
+              "semester": 3,
+              "subject_name": "Estrutura de Dados",
+              "professor_name": "SUELI",
+              "day_of_week": "Sexta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Lab. 14"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Estatística",
+              "professor_name": "JEDIANE",
+              "day_of_week": "Segunda",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 20"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Gestão Qual. e Ambiental",
+              "professor_name": "ANNA",
+              "day_of_week": "Terça",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 07"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Lingua gens de Programação II",
+              "professor_name": "MÁRCIA",
+              "day_of_week": "Quarta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Lab. 12-B"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Administração de Banco de Dados",
+              "professor_name": "SAMARIS",
+              "day_of_week": "Quinta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 08"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Inglês IV",
+              "professor_name": "DARLI",
+              "day_of_week": "Sexta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 05"
+            },
+            {
+              "semester": 5,
+              "subject_name": "Marketing",
+              "professor_name": "CLAUDEMIR",
+              "day_of_week": "Segunda",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 07"
+            },
+            {
+              "semester": 5,
+              "subject_name": "Pesquisa",
+              "professor_name": "ERASMO",
+              "day_of_week": "Terça",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": null
+            },
+            {
+              "semester": 5,
+              "subject_name": "Segurança de Sistemas de Informação",
+              "professor_name": "SAMARIS",
+              "day_of_week": "Quarta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 08"
+            },
+            {
+              "semester": 5,
+              "subject_name": "Gestão Financeira",
+              "professor_name": "NILZA",
+              "day_of_week": "Quinta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 07"
+            },
+            {
+              "semester": 5,
+              "subject_name": "Ling uagem de",
+              "professor_name": "DOUGLAS",
+              "day_of_week": "Sexta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": null
+            },
+            {
+              "semester": 6,
+              "subject_name": "Gestão Planej. Peq. Empresa",
+              "professor_name": "TONY",
+              "day_of_week": "Segunda",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 08"
+            },
+            {
+              "semester": 6,
+              "subject_name": "Sistemas de Gestão da Produção e Logística",
+              "professor_name": "EDITAL",
+              "day_of_week": "Terça",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": null
+            },
+            {
+              "semester": 6,
+              "subject_name": "Multimídia e Hip ermídia",
+              "professor_name": "DOUGLAS",
+              "day_of_week": "Quarta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Lab. 12-A"
+            },
+            {
+              "semester": 6,
+              "subject_name": "Governança em TI",
+              "professor_name": "ROSANGELA",
+              "day_of_week": "Quinta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Lab. 12-B"
+            },
+            {
+              "semester": 6,
+              "subject_name": "Inglês VI",
+              "professor_name": "DARLI",
+              "day_of_week": "Sexta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 05"
+            }
+          ]
+        }
+      ]
+    },{
+          "name": "Automação Industrial",
+          "shifts": [
+            {
+          "name": "Noturno",
+          "subjects": [
+            {
+              "semester": 1,
+              "subject_name": "Física (Mecânica Oscilatória)",
+              "professor_name": "Wellington",
+              "day_of_week": "Segunda",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 19"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Eletricidade Aplicada",
+              "professor_name": "Rômulo",
+              "day_of_week": "Terça",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 27"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Introdução ao Desenho Técnico",
+              "professor_name": "Hernandes",
+              "day_of_week": "Quarta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 20"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Cálculo I",
+              "professor_name": "Delcínio",
+              "day_of_week": "Quinta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 19"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Eletricidade Aplicada",
+              "professor_name": "Rômulo",
+              "day_of_week": "Sexta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 23"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Cálculo II",
+              "professor_name": "Delcínio",
+              "day_of_week": "Segunda",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 04"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Fenômenos de Transporte",
+              "professor_name": "Wellington",
+              "day_of_week": "Terça",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 20"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Eletrônica Analógica I",
+              "professor_name": "Rômulo",
+              "day_of_week": "Quarta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 27"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Tópicos Especiais em Automação I",
+              "professor_name": "Hernandes",
+              "day_of_week": "Quinta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 20"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Eletrônica Digital I",
+              "professor_name": "Hernandes",
+              "day_of_week": "Sexta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 26"
+            },
+            {
+              "semester": 3,
+              "subject_name": "Hidráulica e Pneumática",
+              "professor_name": "Nelson",
+              "day_of_week": "Segunda",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 24"
+            },
+            {
+              "semester": 3,
+              "subject_name": "M icrocontrola- dores",
+              "professor_name": "Zamboni",
+              "day_of_week": "Terça",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 26"
+            },
+            {
+              "semester": 3,
+              "subject_name": "Estatística",
+              "professor_name": "Delcínio",
+              "day_of_week": "Quarta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 19"
+            },
+            {
+              "semester": 3,
+              "subject_name": "Eletrônica Analógica II",
+              "professor_name": "Zamboni",
+              "day_of_week": "Quinta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 27"
+            },
+            {
+              "semester": 3,
+              "subject_name": "Sistemasde Controle",
+              "professor_name": "Mario",
+              "day_of_week": "Sexta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 08"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Programação Aplicada à Automação",
+              "professor_name": "Rodolfo",
+              "day_of_week": "Segunda",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 27"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Laboratório de Automação",
+              "professor_name": "Anderson A",
+              "day_of_week": "Terça",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 24"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Máquinas E létricas I",
+              "professor_name": "Gervásio",
+              "day_of_week": "Quarta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 21-B"
+            },
+            {
+              "semester": 4,
+              "subject_name": "C o ntroladores Programáveis I",
+              "professor_name": "Gallani",
+              "day_of_week": "Quinta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 15"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Sensores e Instrumentação",
+              "professor_name": "Maurício",
+              "day_of_week": "Sexta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 29"
+            },
+            {
+              "semester": 5,
+              "subject_name": "Redes Industriais",
+              "professor_name": "Gallani",
+              "day_of_week": "Segunda",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 26"
+            },
+            {
+              "semester": 5,
+              "subject_name": "Máquinas Elétricas II",
+              "professor_name": "Gervásio",
+              "day_of_week": "Terça",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 28"
+            },
+            {
+              "semester": 5,
+              "subject_name": "Controladores Programáveis II",
+              "professor_name": null,
+              "day_of_week": "Quarta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": null
+            },
+            {
+              "semester": 5,
+              "subject_name": "Tópicos Especiais em Automação III",
+              "professor_name": "Marco Antonio",
+              "day_of_week": "Quinta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": null
+            },
+            {
+              "semester": 5,
+              "subject_name": "O r ganização Industrial",
+              "professor_name": "Anna Cristina",
+              "day_of_week": "Sexta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 20"
+            },
+            {
+              "semester": 6,
+              "subject_name": "Sistemas S upervisórios",
+              "professor_name": "Marco Antonio",
+              "day_of_week": "Segunda",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 25"
+            },
+            {
+              "semester": 6,
+              "subject_name": "Inovação e Empreendedorismo",
+              "professor_name": "Gonçalo",
+              "day_of_week": "Terça",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 21-B"
+            },
+            {
+              "semester": 6,
+              "subject_name": "Instalações Elétricas Industriais",
+              "professor_name": "Volpiano",
+              "day_of_week": "Quarta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 26"
+            },
+            {
+              "semester": 6,
+              "subject_name": "Tópicos Especiais em A utomação IV",
+              "professor_name": "Renan",
+              "day_of_week": "Quinta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 25"
+            },
+            {
+              "semester": 6,
+              "subject_name": "Sistemas Flexíveis da Manufatura",
+              "professor_name": "Gallani",
+              "day_of_week": "Sexta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 25"
+            }
+          ]
+        },
+        {
+          "name": "Matutino",
+          "subjects": [
+            {
+              "semester": 1,
+              "subject_name": "Lógica de Programação",
+              "professor_name": "Carlos Vaz",
+              "day_of_week": "Segunda",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Lab. 15"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Introdução ao Desenho Técnico",
+              "professor_name": "Oswaldo",
+              "day_of_week": "Terça",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 20"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Física (Mecânica Oscilatória)",
+              "professor_name": "Valter",
+              "day_of_week": "Quarta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 19"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Eletricidade Aplicada",
+              "professor_name": "Rômulo",
+              "day_of_week": "Quinta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 23"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Cálculo I",
+              "professor_name": "Delcínio",
+              "day_of_week": "Sexta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 19"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Física (Eletricidade e Eletromag.)",
+              "professor_name": "Valter",
+              "day_of_week": "Segunda",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 23"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Tópicos Especiais em Automação I",
+              "professor_name": "Oswaldo",
+              "day_of_week": "Terça",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 20"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Fenômenos de Transporte",
+              "professor_name": "Nelson",
+              "day_of_week": "Quarta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 23"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Fenômenos de Transporte",
+              "professor_name": "Nelson",
+              "day_of_week": "Quinta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 23"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Eletrônica Analógica I",
+              "professor_name": "Rômulo",
+              "day_of_week": "Sexta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Lab. 27"
+            },
+            {
+              "semester": 3,
+              "subject_name": "Estatística",
+              "professor_name": "Lilian",
+              "day_of_week": "Segunda",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 23"
+            },
+            {
+              "semester": 3,
+              "subject_name": "Eletrônica Digital II",
+              "professor_name": "Volpiano",
+              "day_of_week": "Terça",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Lab. 26"
+            },
+            {
+              "semester": 3,
+              "subject_name": "S i stemas de Controle",
+              "professor_name": "Josemar",
+              "day_of_week": "Quarta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 23"
+            },
+            {
+              "semester": 3,
+              "subject_name": "Eletrônica Analógica II",
+              "professor_name": "Zamboni",
+              "day_of_week": "Quinta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Lab. 27"
+            },
+            {
+              "semester": 3,
+              "subject_name": "Hidráulica e Pneumática",
+              "professor_name": "Nelson",
+              "day_of_week": "Sexta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 24"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Eletrônica de Potência",
+              "professor_name": "Volpiano",
+              "day_of_week": "Segunda",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Lab. 26 Lab"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Máquinas Elétricas I",
+              "professor_name": "Gervasio",
+              "day_of_week": "Terça",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Lab. 28"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Laboratório de Automação",
+              "professor_name": "Ivan",
+              "day_of_week": "Quarta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Lab. 24"
+            },
+            {
+              "semester": 4,
+              "subject_name": "C o ntroladores Programáveis I",
+              "professor_name": "Ivan",
+              "day_of_week": "Quinta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Lab. 15"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Máquinas E lé t ricas I",
+              "professor_name": "Gervasio",
+              "day_of_week": "Sexta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 29"
+            },
+            {
+              "semester": 5,
+              "subject_name": "Organização Industrial",
+              "professor_name": "Gonçalo",
+              "day_of_week": "Segunda",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 19"
+            },
+            {
+              "semester": 5,
+              "subject_name": "Redes Industriais",
+              "professor_name": "Gallani",
+              "day_of_week": "Terça",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Lab. 25"
+            },
+            {
+              "semester": 5,
+              "subject_name": "Tópicos Especiais em Automação III",
+              "professor_name": "Marco Antonio",
+              "day_of_week": "Quarta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Lab. 15"
+            },
+            {
+              "semester": 5,
+              "subject_name": "Robótica",
+              "professor_name": "Gervasio",
+              "day_of_week": "Quinta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 13"
+            },
+            {
+              "semester": 5,
+              "subject_name": "M áquinas Elétricas II",
+              "professor_name": "Gervasio",
+              "day_of_week": "Sexta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 21-B"
+            },
+            {
+              "semester": 6,
+              "subject_name": "Sistema de Gestão Integrado",
+              "professor_name": "Erasmo",
+              "day_of_week": "Segunda",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Sala 06"
+            },
+            {
+              "semester": 6,
+              "subject_name": "Tópicos Especiais em Automação IV",
+              "professor_name": "Griese",
+              "day_of_week": "Terça",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Lab. 12-A"
+            },
+            {
+              "semester": 6,
+              "subject_name": "Instalações Elétricas Industriais",
+              "professor_name": "Volpiano",
+              "day_of_week": "Quarta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Lab. 26"
+            },
+            {
+              "semester": 6,
+              "subject_name": "Sistemas Supervisórios",
+              "professor_name": null,
+              "day_of_week": "Quinta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": null
+            },
+            {
+              "semester": 6,
+              "subject_name": "Projeto de Graduação II",
+              "professor_name": "Lilian",
+              "day_of_week": "Sexta",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": "Lab. 12-A"
+            }
+          ]
+        }
+      ]
+    }
+,{
+      "name": "Manufatura Avançada",
+      "shifts": [
+        {
+          "name": "Noturno",
+          "subjects": [
+            {
+              "semester": 1,
+              "subject_name": "Desenvolvimento Integrado do Produto I",
+              "professor_name": "Renan",
+              "day_of_week": "Segunda",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 15"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Lógica de Programação (Arduino)",
+              "professor_name": "Sarapka",
+              "day_of_week": "Terça",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 15"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Tecnologia Mecânica",
+              "professor_name": "Odair",
+              "day_of_week": "Quarta",
+              "start_time": "19:00",
+              "end_time": "20:40",
+              "room": "Sala 07"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Tópicos de Mat. Elementar",
+              "professor_name": "Wellington",
+              "day_of_week": "Quarta",
+              "start_time": "20:50",
+              "end_time": "22:30",
+              "room": "Sala 06"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Eletrônica",
+              "professor_name": "Mario",
+              "day_of_week": "Quinta",
+              "start_time": "19:00",
+              "end_time": "20:40",
+              "room": "Lab. 26"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Inglês I",
+              "professor_name": "Erick",
+              "day_of_week": "Quinta",
+              "start_time": "20:50",
+              "end_time": "22:30",
+              "room": "Sala 05"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Interpretação e Produção de Textos",
+              "professor_name": "Tânia",
+              "day_of_week": "Sexta",
+              "start_time": "19:00",
+              "end_time": "20:40",
+              "room": "Sala 07"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Gestão de Carreira",
+              "professor_name": "Marcelo Okano",
+              "day_of_week": "Sexta",
+              "start_time": "20:50",
+              "end_time": "22:30",
+              "room": "Sala 04"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Big Data",
+              "professor_name": "Izaías",
+              "day_of_week": "Segunda",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 20"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Tecnologia dos Materiais",
+              "professor_name": "Odair",
+              "day_of_week": "Terça",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 06"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Sistemas Mecânicos (Física I)",
+              "professor_name": "Wellington",
+              "day_of_week": "Quarta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 06"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Inglês II",
+              "professor_name": "Erick",
+              "day_of_week": "Quinta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 05"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Desenvolvimento Integrado de Produto II",
+              "professor_name": "Renan",
+              "day_of_week": "Sexta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 14"
+            },
+            {
+              "semester": 3,
+              "subject_name": "Desenvolv . Int. de Produto I II",
+              "professor_name": "Davi",
+              "day_of_week": "Segunda",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 23"
+            },
+            {
+              "semester": 3,
+              "subject_name": "Inglês II",
+              "professor_name": "Erick",
+              "day_of_week": "Terça",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 05"
+            },
+            {
+              "semester": 3,
+              "subject_name": "Internet das Coisas",
+              "professor_name": "Renan",
+              "day_of_week": "Quarta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 15"
+            },
+            {
+              "semester": 3,
+              "subject_name": "Segurança Cibernética",
+              "professor_name": "Izaias",
+              "day_of_week": "Quinta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 02"
+            },
+            {
+              "semester": 3,
+              "subject_name": "Sistemas de Integração - Redes Industriais",
+              "professor_name": "Flávio",
+              "day_of_week": "Sexta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 03"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Simulação de Processos de Manufatura",
+              "professor_name": "W i l l ia m",
+              "day_of_week": "Segunda",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 12-B"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Desenvolvimento Integrado de Produto IV",
+              "professor_name": "Davi",
+              "day_of_week": "Terça",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 25"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Sistemas Automatizados I",
+              "professor_name": "Marco Antonio",
+              "day_of_week": "Quarta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 24"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Manufatura Enxuta",
+              "professor_name": "Marcelo Clécio",
+              "day_of_week": "Quinta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 21-B"
+            },
+            {
+              "semester": 4,
+              "subject_name": "CAE - Fluidos e Energia",
+              "professor_name": "Eraldo Barros",
+              "day_of_week": "Sexta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 12-B"
+            },
+            {
+              "semester": 5,
+              "subject_name": "Projeto de Fábrica",
+              "professor_name": "Anna",
+              "day_of_week": "Segunda",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 06"
+            },
+            {
+              "semester": 5,
+              "subject_name": "Gestão de Equipe",
+              "professor_name": "João de Deus",
+              "day_of_week": "Terça",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 04"
+            },
+            {
+              "semester": 5,
+              "subject_name": "Sistemas Automatizados II",
+              "professor_name": "Ivan",
+              "day_of_week": "Quarta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 03"
+            },
+            {
+              "semester": 5,
+              "subject_name": "Metodologia da Pesquisa",
+              "professor_name": "William",
+              "day_of_week": "Quinta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 23"
+            },
+            {
+              "semester": 5,
+              "subject_name": "Desenvolvimento Integrado de Produto V",
+              "professor_name": "Cláudio Torres",
+              "day_of_week": "Sexta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 13"
+            },
+            {
+              "semester": 6,
+              "subject_name": "Meio Ambiente, Segurança e Sustentabilidade",
+              "professor_name": "Marcelo Clécio",
+              "day_of_week": "Segunda",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 08"
+            },
+            {
+              "semester": 6,
+              "subject_name": "Logística e Cadeia de Sup.",
+              "professor_name": "Marcelo Okano",
+              "day_of_week": "Terça",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Sala 07"
+            },
+            {
+              "semester": 6,
+              "subject_name": "Automação e Robótica",
+              "professor_name": "Anderson A",
+              "day_of_week": "Quarta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 25"
+            },
+            {
+              "semester": 6,
+              "subject_name": "Inglês VI",
+              "professor_name": "Moacyr",
+              "day_of_week": "Quinta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 12-A"
+            },
+            {
+              "semester": 6,
+              "subject_name": "Integração CAD/CAM/CAE",
+              "professor_name": "James",
+              "day_of_week": "Sexta",
+              "start_time": "19:00",
+              "end_time": "22:30",
+              "room": "Lab. 02"
+            },
+            {
+              "semester": 1,
+              "subject_name": "Desenho Técnico",
+              "professor_name": "Daniel Pezza",
+              "day_of_week": "Sábado",
+              "start_time": "07:40",
+              "end_time": "11:20",
+              "room": "Sala 20"
+            },
+            {
+              "semester": 2,
+              "subject_name": "Instrumentação e Medidas Elétricas",
+              "professor_name": null,
+              "day_of_week": "Sábado",
+              "start_time": "09:40",
+              "end_time": "13:00",
+              "room": null
+            },
+            {
+              "semester": 3,
+              "subject_name": "Processos de Fabricação",
+              "professor_name": "Marcelo Clécio",
+              "day_of_week": "Sábado",
+              "start_time": "09:40",
+              "end_time": "13:00",
+              "room": "Sala 07"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Nuvem",
+              "professor_name": "Izaías",
+              "day_of_week": "Sábado",
+              "start_time": "09:40",
+              "end_time": "11:20",
+              "room": "Lab. 03"
+            },
+            {
+              "semester": 4,
+              "subject_name": "Cálculo Vetorial Aplicado",
+              "professor_name": "Diogo",
+              "day_of_week": "Sábado",
+              "start_time": "11:20",
+              "end_time": "13:00",
+              "room": "Lab. 03"
+            },
+            {
+              "semester": 5,
+              "subject_name": "Controle de Qualidade e",
+              "professor_name": "William",
+              "day_of_week": "Sábado",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": null
+            },
+            {
+              "semester": 6,
+              "subject_name": "Desenv. Integrado de",
+              "professor_name": null,
+              "day_of_week": "Sábado",
+              "start_time": "07:40",
+              "end_time": "13:00",
+              "room": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -87,3 +87,21 @@ class Grade(Base):
     # Relações
     owner = relationship("User", back_populates="grades")
     subject = relationship("Subject", back_populates="grades")
+    
+    
+class CourseSubject(Base):
+    """
+    Modelo que representa uma matéria no catálogo mestre de um curso.
+    """
+    __tablename__ = "course_subjects"
+
+    id = Column(Integer, primary_key=True)
+    course = Column(String, nullable=False, index=True) # Ex: "Análise e Desenvolvimento de Sistemas"
+    shift = Column(String, nullable=False, index=True)  # Ex: "Noite"
+    semester = Column(Integer, nullable=False, index=True)
+    subject_name = Column(String, nullable=False)
+    professor_name = Column(String, nullable=True)
+    day_of_week = Column(String, nullable=False)
+    start_time = Column(Time, nullable=False)
+    end_time = Column(Time, nullable=False)
+    room = Column(String, nullable=True)

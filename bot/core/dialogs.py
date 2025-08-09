@@ -43,32 +43,45 @@ WEEK_ACTIVITY_LINE = " • <b>{date_str}:</b> {icon} {name} ({subject_name})\n"
 
 # Ajuda
 HELP_TEXT = (
-    "Olá! Sou seu mano JOVIS. Aqui está um resumo de tudo que posso fazer:\n\n"
-    "💡 <b>Dica:</b> Tenho um menu interativo com atalhos para algumas funções. "
+    "Olá! Eu sou seu assistente de estudos. Aqui está um resumo de tudo que posso fazer:\n\n"
+    "💡 <b>Dica Principal:</b> A melhor forma de me usar é através do menu interativo. "
     "Basta enviar /start para acessá-lo a qualquer momento!\n\n"
     "<b>Comandos Diretos:</b>\n"
     "— — — — — — — — — —\n\n"
+    "🚀 <b>Configuração Rápida</b>\n"
+    "• /fatec - Configura sua grade horária completa de um curso da Fatec S.B. de forma automática.\n\n"
+
     "📚 <b>Matérias</b>\n"
     "• /grade - Exibe sua grade horária completa.\n"
-    "• /addmateria - Cadastra uma nova matéria.\n"
-    "• /gerenciarmaterias - Edita ou exclui matérias.\n"
+    "• /addmateria - Cadastra uma nova matéria manualmente.\n"
+    "• /gerenciarmaterias - Permite editar ou excluir matérias.\n"
     "• /relatorio - Gera um relatório detalhado de uma matéria.\n\n"
+
     "🗓️ <b>Trabalhos e Provas</b>\n"
-    "• /calendario - Lista seus trabalhos e provas.\n"
-    "• /addtrabalho - Adiciona um novo trabalho.\n"
-    "• /addprova - Adiciona uma nova prova.\n"
+    "• /calendario - Lista todos os seus trabalhos e provas.\n"
+    "• /addtrabalho - Adiciona um novo trabalho na sua agenda.\n"
+    "• /addprova - Adiciona uma nova prova na sua agenda.\n"
     "• /gerenciartrabalhos - Edita ou exclui trabalhos.\n"
     "• /gerenciarprovas - Edita ou exclui provas.\n\n"
+
     "✖️ <b>Faltas e 🎓 Notas</b>\n"
     "• /faltei - Registra uma ou mais faltas.\n"
     "• /gerenciarfaltas - Edita ou exclui registros de faltas.\n"
     "• /addnota - Lança uma nova nota.\n"
     "• /gerenciarnotas - Edita ou exclui notas.\n\n"
-    "⚙️ <b>Geral</b>\n"
+
+    "⚡ <b>Resumos Rápidos</b>\n"
+    "• /hoje - Mostra um resumo das aulas e atividades do dia.\n"
+    "• /semana - Lista as atividades dos próximos 7 dias.\n\n"
+    
+    "⚙️ <b>Comandos Gerais</b>\n"
     "• /start - Mostra o menu principal.\n"
     "• /help - Mostra esta mensagem de ajuda.\n"
-    "• /cancelar - <b>(Importante!)</b> Interrompe qualquer operação.\n"
-    "• /bug - Reportar um problema ou bug para o desenvolvedor."
+    "• /bug - Reportar um problema para o desenvolvedor.\n"
+    "• /import - (Avançado) Cadastra matérias em massa a partir de um arquivo JSON.\n"
+    "• /deletardados - Apaga todos os seus dados do bot.\n"
+    "• /privacidade - Mostra a política de privacidade.\n"
+    "• /cancelar - <b>(Importante!)</b> Interrompe qualquer operação."
 )
 
 # =============================================================================
@@ -215,3 +228,92 @@ IMPORT_FAILURE = (
     "Por favor, corrija os seguintes problemas no seu arquivo e envie novamente:\n"
     "{error_list}"
 )
+
+
+
+# =============================================================================
+# FLUXO FATEC (/fatec)
+# =============================================================================
+FATEC_ONBOARDING_START = "Olá, futuro(a) FATECano(a)! Vamos configurar sua grade horária.\n\nPrimeiro, escolha seu curso:"
+FATEC_ONBOARDING_ASK_SHIFT = "Ótima escolha! Agora, qual o seu turno?"
+FATEC_ONBOARDING_ASK_GRADE_TYPE = "Entendido. Como você prefere montar sua grade?\n\nA grade personalizada é ideal para quem tem DPs ou adiantou matérias."
+FATEC_ONBOARDING_ASK_IDEAL_SEMESTER = "Perfeito! Agora, por favor, selecione o seu semestre:"
+FATEC_ONBOARDING_PROCESSING = "Processando sua grade, um momento..."
+FATEC_ONBOARDING_NO_IDEAL_GRADE = "Desculpe, não encontrei a grade ideal para o {semester}º semestre do seu curso/turno."
+FATEC_ONBOARDING_IDEAL_SUCCESS = "✅ Sucesso! Sua grade com {count} matérias para o {semester}º semestre foi cadastrada. Use o comando /grade para visualizar."
+FATEC_ONBOARDING_NO_CATALOG = "Desculpe, não encontrei o catálogo de matérias para seu curso/turno."
+FATEC_ONBOARDING_CUSTOM_LIST_HEADER = "Certo! Abaixo está a lista de TODAS as matérias disponíveis para o seu curso.\n\n"
+FATEC_ONBOARDING_CUSTOM_PROMPT = "Por favor, envie uma mensagem com os <b>IDs</b> das matérias que você irá cursar, separados por vírgula ou espaço (ex: 1, 5, 12, 18)."
+FATEC_ONBOARDING_INVALID_IDS = "Formato de IDs inválido. Por favor, envie apenas os números separados por espaço ou vírgula."
+FATEC_ONBOARDING_CONFLICT_ERROR = "{error}\n\nPor favor, escolha uma nova combinação de IDs."
+FATEC_ONBOARDING_NO_CONFLICT_ASK_SEMESTER = "Ótima escolha! Nenhum conflito de horário encontrado.\n\nPara finalizar, em qual semestre você está? (Isto é opcional, envie 'pular' se não quiser informar)"
+FATEC_ONBOARDING_INVALID_SEMESTER = "Semestre inválido. O cadastro será feito sem essa informação."
+FATEC_ONBOARDING_FINALIZING_CUSTOM = "Finalizando o cadastro da sua grade personalizada..."
+FATEC_ONBOARDING_CUSTOM_SUCCESS = "✅ Tudo pronto! Sua grade personalizada com {count} matérias foi cadastrada com sucesso. Use /grade para ver o resultado."
+
+
+
+
+# =============================================================================
+# EXCLUSÃO DE DADOS (/deletardados)
+# =============================================================================
+DELETE_DATA_WARNING = (
+    "⚠️ <b>ATENÇÃO: AÇÃO IRREVERSÍVEL</b> ⚠️\n\n"
+    "Você está prestes a apagar <b>TODOS</b> os seus dados do Jovis. "
+    "Isso inclui sua grade horária, todas as atividades, faltas e notas cadastradas.\n\n"
+    "Esta ação não pode ser desfeita.\n\n"
+    "Para confirmar que você entende e deseja prosseguir, por favor, digite a frase exata abaixo:\n"
+    "<code>excluir todos os meus dados</code>"
+)
+DELETE_DATA_CONFIRMATION_INVALID = "A confirmação está incorreta. A operação foi cancelada para sua segurança."
+DELETE_DATA_SUCCESS = "Todos os seus dados foram permanentemente removidos. Obrigado por usar o Jovis. Adeus! 👋"
+
+
+
+# =============================================================================
+# COMANDOS DE ADMINISTRADOR
+# =============================================================================
+ADMIN_BROADCAST_START = (
+    "<b>Modo Administrador: Transmissão</b>\n\n"
+    "Por favor, envie a mensagem que você deseja transmitir para <b>TODOS</b> os usuários do bot.\n\n"
+    "A mensagem pode conter formatação HTML. Use /cancelar para sair."
+)
+ADMIN_BROADCAST_CONFIRM = (
+    "<b>Revisão da Mensagem de Transmissão:</b>\n\n"
+    "— — — Mensagem Abaixo — — —\n"
+    "{message}\n"
+    "— — — Fim da Mensagem — — —\n\n"
+    "Você tem certeza que deseja enviar esta mensagem para <b>{user_count}</b> usuário(s)?\n"
+    "Esta ação não pode ser desfeita."
+)
+ADMIN_BROADCAST_SENDING = "Iniciando a transmissão... A mensagem está sendo enviada em segundo plano. Você receberá um relatório ao final."
+ADMIN_BROADCAST_CANCELED = "Transmissão cancelada."
+ADMIN_BROADCAST_REPORT = (
+    "✅ <b>Relatório de Transmissão Concluído</b> ✅\n\n"
+    "• <b>Sucessos:</b> {success_count}\n"
+    "• <b>Falhas (usuários que bloquearam o bot):</b> {failure_count}"
+)
+ADMIN_SEND_USAGE = "Uso incorreto. Formato: /enviar <ID_DO_USUARIO> <mensagem>"
+ADMIN_SEND_SUCCESS = "✅ Mensagem enviada com sucesso para o usuário {user_name} (ID: {user_id})."
+ADMIN_SEND_FAILURE_NOT_FOUND = "❌ Falha: Usuário com ID {user_id} não encontrado no banco de dados."
+ADMIN_SEND_FAILURE_BLOCKED = "❌ Falha: Não foi possível enviar a mensagem. O usuário {user_name} (ID: {user_id}) provavelmente bloqueou o bot."
+ADMIN_SEND_FAILURE_GENERAL = "❌ Falha: Ocorreu um erro inesperado ao tentar enviar a mensagem para o usuário {user_id}."
+
+
+# =============================================================================
+# LEMBRETES (REMINDERS)
+# =============================================================================
+
+# --- Lembretes Automáticos de Prazos ---
+REMINDER_AUTOMATIC_HEADER = "Ei! Tenho alguns lembretes importantes para você:\n\n"
+REMINDER_AUTOMATIC_TOMORROW = "🔔 <b>Atenção, vence AMANHÃ:</b> {activity_type} '<b>{activity_name}</b>' (Matéria: {subject_name})"
+REMINDER_AUTOMATIC_3_DAYS = "🔔 <b>Lembrete para daqui a 3 dias:</b> {activity_type} '<b>{activity_name}</b>' (Matéria: {subject_name})"
+
+# --- Lembretes Personalizados (/lembrar) ---
+REMINDER_CUSTOM_ASK_MESSAGE = "Ok, vamos criar um lembrete. Primeiro, me diga: <b>o que</b> você quer que eu te lembre?"
+REMINDER_CUSTOM_ASK_TIME = "Entendido. Agora, <b>quando</b> você quer ser lembrado? (Ex: em 1 hora, amanhã às 10:30, 25/12/2025 18:00)"
+REMINDER_CUSTOM_ERROR_TIME = "Desculpe, não consegui entender essa data/hora. Tente ser mais específico, como 'amanhã às 14h'."
+REMINDER_CUSTOM_SUCCESS = "✅ Certo! Agendei um lembrete para '<b>{reminder_message}</b>' em {reminder_datetime}."
+REMINDER_CUSTOM_NOTIFICATION = "🔔 <b>Lembrete:</b> {reminder_message}"
+
+
