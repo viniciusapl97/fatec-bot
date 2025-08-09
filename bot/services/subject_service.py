@@ -6,6 +6,7 @@ from sqlalchemy import case
 from bot.db.models import Subject, User, Absence, Grade
 from typing import List
 from datetime import datetime, time
+from bot.db.models import CourseSubject
 
 import logging
 
@@ -98,3 +99,22 @@ def bulk_create_subjects(db: Session, user: User, subjects_data: list) -> dict:
     else:
         db.commit() # Se tudo deu certo, salva tudo de uma vez
         return {"success": created_count, "errors": []}
+    
+    
+def bulk_create_from_course_subjects(db: Session, user: User, course_subjects: List[CourseSubject], semester_override: int | None = None) -> int:
+    """Cria múltiplas matérias para um usuário a partir do catálogo mestre."""
+    for course_sub in course_subjects:
+        db_subject = Subject(
+            name=course_sub.subject_name,
+            professor=course_sub.professor_name,
+            day_of_week=course_sub.day_of_week,
+            room=course_sub.room,
+            start_time=course_sub.start_time,
+            end_time=course_sub.end_time,
+            semestre=semester_override if semester_override is not None else course_sub.semester,
+            owner=user
+        )
+        db.add(db_subject)
+    
+    db.commit()
+    return len(course_subjects)

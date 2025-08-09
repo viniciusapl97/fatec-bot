@@ -21,6 +21,7 @@ from bot.handlers.absence_handler import setup_absence_handler, setup_absence_ma
 from bot.handlers.grade_handler import setup_grade_handler, setup_grade_management_handler
 from bot.handlers.import_handler import setup_import_handler
 from bot.handlers.bug_report_handler import setup_bug_report_handler
+from bot.handlers.fatec_handler import setup_fatec_handler
 
 # Configura o logging
 logging.basicConfig(
@@ -52,7 +53,8 @@ async def post_init_configuration(application: Application) -> None:
         BotCommand("gerenciarfaltas", "Edita ou exclui registros de faltas"),
         BotCommand("gerenciartrabalhos", "Edita ou exclui trabalhos"),
         BotCommand("gerenciarprovas", "Edita ou exclui provas"),
-        BotCommand("bug", "Reportar um problema ou bug para o desenvolvedor")
+        BotCommand("bug", "Reportar um problema ou bug para o desenvolvedor"),
+        BotCommand("fatec", "Configura a grade horária de um curso da Fatec S.B.")
     ]
     await application.bot.set_my_commands(commands)
 
@@ -87,6 +89,7 @@ def main() -> None:
     application.add_handler(setup_grade_management_handler())
     application.add_handler(setup_import_handler())
     application.add_handler(setup_bug_report_handler())
+    application.add_handler(setup_fatec_handler())
     
     
     # --- Handlers de Callback (Botões Genéricos) ---

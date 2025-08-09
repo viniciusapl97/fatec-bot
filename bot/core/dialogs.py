@@ -215,3 +215,25 @@ IMPORT_FAILURE = (
     "Por favor, corrija os seguintes problemas no seu arquivo e envie novamente:\n"
     "{error_list}"
 )
+
+
+
+# =============================================================================
+# FLUXO FATEC (/fatec)
+# =============================================================================
+FATEC_ONBOARDING_START = "Olá, futuro(a) FATECano(a)! Vamos configurar sua grade horária.\n\nPrimeiro, escolha seu curso:"
+FATEC_ONBOARDING_ASK_SHIFT = "Ótima escolha! Agora, qual o seu turno?"
+FATEC_ONBOARDING_ASK_GRADE_TYPE = "Entendido. Como você prefere montar sua grade?\n\nA grade personalizada é ideal para quem tem DPs ou adiantou matérias."
+FATEC_ONBOARDING_ASK_IDEAL_SEMESTER = "Perfeito! Agora, por favor, selecione o seu semestre:"
+FATEC_ONBOARDING_PROCESSING = "Processando sua grade, um momento..."
+FATEC_ONBOARDING_NO_IDEAL_GRADE = "Desculpe, não encontrei a grade ideal para o {semester}º semestre do seu curso/turno."
+FATEC_ONBOARDING_IDEAL_SUCCESS = "✅ Sucesso! Sua grade com {count} matérias para o {semester}º semestre foi cadastrada. Use o comando /grade para visualizar."
+FATEC_ONBOARDING_NO_CATALOG = "Desculpe, não encontrei o catálogo de matérias para seu curso/turno."
+FATEC_ONBOARDING_CUSTOM_LIST_HEADER = "Certo! Abaixo está a lista de TODAS as matérias disponíveis para o seu curso.\n\n"
+FATEC_ONBOARDING_CUSTOM_PROMPT = "Por favor, envie uma mensagem com os <b>IDs</b> das matérias que você irá cursar, separados por vírgula ou espaço (ex: 1, 5, 12, 18)."
+FATEC_ONBOARDING_INVALID_IDS = "Formato de IDs inválido. Por favor, envie apenas os números separados por espaço ou vírgula."
+FATEC_ONBOARDING_CONFLICT_ERROR = "{error}\n\nPor favor, escolha uma nova combinação de IDs."
+FATEC_ONBOARDING_NO_CONFLICT_ASK_SEMESTER = "Ótima escolha! Nenhum conflito de horário encontrado.\n\nPara finalizar, em qual semestre você está? (Isto é opcional, envie 'pular' se não quiser informar)"
+FATEC_ONBOARDING_INVALID_SEMESTER = "Semestre inválido. O cadastro será feito sem essa informação."
+FATEC_ONBOARDING_FINALIZING_CUSTOM = "Finalizando o cadastro da sua grade personalizada..."
+FATEC_ONBOARDING_CUSTOM_SUCCESS = "✅ Tudo pronto! Sua grade personalizada com {count} matérias foi cadastrada com sucesso. Use /grade para ver o resultado."
