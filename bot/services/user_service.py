@@ -1,5 +1,6 @@
+from datetime import date, timedelta
 from sqlalchemy.orm import Session
-from bot.db.models import User
+from bot.db.models import Activity, User
 from typing import Tuple 
 from typing import List
 
