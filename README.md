@@ -24,7 +24,6 @@ O tom do bot foi inspirado em um professor querido: direto, gentil e que puxa pa
 * **PostgreSQL**
 * **SQLAlchemy 2.0**
 * `psycopg2-binary`, `python-dotenv`
-* **Deploy sugerido:** Railway ou Render
 
 ### Como o projeto está organizado
 Usei uma organização em camadas para separar responsabilidades e facilitar manutenção:
