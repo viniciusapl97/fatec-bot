@@ -40,6 +40,12 @@ if not DATABASE_URL:
         f"postgresql://{required_vars['DB_USER']}:{required_vars['DB_PASSWORD']}@"
         f"{required_vars['DB_HOST']}:{required_vars['DB_PORT']}/{required_vars['DB_NAME']}"
     )
+
+
+#--- Configuração de Admin ---
+# Carrega a string de IDs e a transforma em uma lista de números inteiros
+ADMIN_IDS_STR = os.getenv("ADMIN_USER_IDS", "")
+ADMIN_USER_IDS = [int(user_id) for user_id in ADMIN_IDS_STR.split(",") if user_id]
     
     
     # --- Configurações de Email ---

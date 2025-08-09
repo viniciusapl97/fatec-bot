@@ -1,6 +1,10 @@
 from sqlalchemy.orm import Session
 from bot.db.models import User
-from typing import Tuple # Importe Tuple
+from typing import Tuple 
+from typing import List
+
+
+
 def get_or_create_user(db: Session, user_id: int, first_name: str, username: str | None) -> Tuple[User, bool]:
     """
     Busca um usuário no banco de dados pelo user_id.
@@ -24,7 +28,13 @@ def get_or_create_user(db: Session, user_id: int, first_name: str, username: str
         
     return db_user, is_new
 
+def get_all_active_users(db: Session) -> List[User]:
+    """Retorna uma lista de todos os usuários no banco de dados."""
+    return db.query(User).all()
 
+def get_user_by_telegram_id(db: Session, user_id: int) -> User | None:
+    """Busca um usuário pelo seu ID do Telegram."""
+    return db.query(User).filter(User.user_id == user_id).first()
 
 def delete_user_by_id(db: Session, user_id: int) -> bool:
     """
@@ -37,3 +47,10 @@ def delete_user_by_id(db: Session, user_id: int) -> bool:
         db.commit()
         return True
     return False
+
+def get_upcoming_activities(db: Session, days_ahead: int) -> List[Activity]:
+    """
+    Busca todas as atividades de todos os usuários que vencem em exatamente 'days_ahead' dias.
+    """
+    target_date = date.today() + timedelta(days=days_ahead)
+    return db.query(Activity).filter(Activity.due_date == target_date).all()

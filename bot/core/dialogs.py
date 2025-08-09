@@ -267,3 +267,53 @@ DELETE_DATA_WARNING = (
 )
 DELETE_DATA_CONFIRMATION_INVALID = "A confirmação está incorreta. A operação foi cancelada para sua segurança."
 DELETE_DATA_SUCCESS = "Todos os seus dados foram permanentemente removidos. Obrigado por usar o Jovis. Adeus! 👋"
+
+
+
+# =============================================================================
+# COMANDOS DE ADMINISTRADOR
+# =============================================================================
+ADMIN_BROADCAST_START = (
+    "<b>Modo Administrador: Transmissão</b>\n\n"
+    "Por favor, envie a mensagem que você deseja transmitir para <b>TODOS</b> os usuários do bot.\n\n"
+    "A mensagem pode conter formatação HTML. Use /cancelar para sair."
+)
+ADMIN_BROADCAST_CONFIRM = (
+    "<b>Revisão da Mensagem de Transmissão:</b>\n\n"
+    "— — — Mensagem Abaixo — — —\n"
+    "{message}\n"
+    "— — — Fim da Mensagem — — —\n\n"
+    "Você tem certeza que deseja enviar esta mensagem para <b>{user_count}</b> usuário(s)?\n"
+    "Esta ação não pode ser desfeita."
+)
+ADMIN_BROADCAST_SENDING = "Iniciando a transmissão... A mensagem está sendo enviada em segundo plano. Você receberá um relatório ao final."
+ADMIN_BROADCAST_CANCELED = "Transmissão cancelada."
+ADMIN_BROADCAST_REPORT = (
+    "✅ <b>Relatório de Transmissão Concluído</b> ✅\n\n"
+    "• <b>Sucessos:</b> {success_count}\n"
+    "• <b>Falhas (usuários que bloquearam o bot):</b> {failure_count}"
+)
+ADMIN_SEND_USAGE = "Uso incorreto. Formato: /enviar <ID_DO_USUARIO> <mensagem>"
+ADMIN_SEND_SUCCESS = "✅ Mensagem enviada com sucesso para o usuário {user_name} (ID: {user_id})."
+ADMIN_SEND_FAILURE_NOT_FOUND = "❌ Falha: Usuário com ID {user_id} não encontrado no banco de dados."
+ADMIN_SEND_FAILURE_BLOCKED = "❌ Falha: Não foi possível enviar a mensagem. O usuário {user_name} (ID: {user_id}) provavelmente bloqueou o bot."
+ADMIN_SEND_FAILURE_GENERAL = "❌ Falha: Ocorreu um erro inesperado ao tentar enviar a mensagem para o usuário {user_id}."
+
+
+# =============================================================================
+# LEMBRETES (REMINDERS)
+# =============================================================================
+
+# --- Lembretes Automáticos de Prazos ---
+REMINDER_AUTOMATIC_HEADER = "Ei! Tenho alguns lembretes importantes para você:\n\n"
+REMINDER_AUTOMATIC_TOMORROW = "🔔 <b>Atenção, vence AMANHÃ:</b> {activity_type} '<b>{activity_name}</b>' (Matéria: {subject_name})"
+REMINDER_AUTOMATIC_3_DAYS = "🔔 <b>Lembrete para daqui a 3 dias:</b> {activity_type} '<b>{activity_name}</b>' (Matéria: {subject_name})"
+
+# --- Lembretes Personalizados (/lembrar) ---
+REMINDER_CUSTOM_ASK_MESSAGE = "Ok, vamos criar um lembrete. Primeiro, me diga: <b>o que</b> você quer que eu te lembre?"
+REMINDER_CUSTOM_ASK_TIME = "Entendido. Agora, <b>quando</b> você quer ser lembrado? (Ex: em 1 hora, amanhã às 10:30, 25/12/2025 18:00)"
+REMINDER_CUSTOM_ERROR_TIME = "Desculpe, não consegui entender essa data/hora. Tente ser mais específico, como 'amanhã às 14h'."
+REMINDER_CUSTOM_SUCCESS = "✅ Certo! Agendei um lembrete para '<b>{reminder_message}</b>' em {reminder_datetime}."
+REMINDER_CUSTOM_NOTIFICATION = "🔔 <b>Lembrete:</b> {reminder_message}"
+
+
