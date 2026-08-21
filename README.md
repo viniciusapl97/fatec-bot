@@ -118,14 +118,23 @@ Todos os textos enviados pelo bot estão centralizados em `bot/core/dialogs.py`,
 │   │   └── ...             # subject_handler.py etc.
 │   ├── services/           # Regras de negócio
 │   └── decorators.py       # Ex.: @admin_only
+├── tests/                  # Testes unitários (pytest) dos services
 ├── .env                    # NÃO comitar
 ├── .gitignore
 ├── main.py                 # Entrada da aplicação
 ├── README.md
-└── requirements.txt
+├── requirements.txt
+└── requirements-dev.txt    # requirements.txt + pytest
 ```
+### Rodando os testes
+Os testes cobrem a camada de `bot/services/` e usam SQLite em memória, sem precisar de Postgres nem de token do Telegram de verdade:
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
 ### Dicas rápidas
 * **Personalização:** ajuste a “voz” do bot em `bot/core/dialogs.py`.
-* **Testes:** antes de mandar para `main`, teste localmente com o bot de testes.
+* **Testes:** rode `pytest` (cobre os `services/`) e, antes de mandar para `main`, teste também manualmente com o bot de testes.
 
 Curtiu a ideia? Se algo estiver confuso ou você tiver uma forma melhor de fazer, abre uma *issue* ou manda bala num *PR*. 
