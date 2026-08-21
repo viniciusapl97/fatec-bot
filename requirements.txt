@@ -3,6 +3,7 @@ anyio==4.10.0
 APScheduler==3.11.0
 certifi==2025.8.3
 dateparser==1.2.2
+fastapi==0.115.6
 greenlet==3.2.3
 h11==0.16.0
 httpcore==1.0.9
@@ -20,3 +21,4 @@ SQLAlchemy==2.0.42
 typing_extensions==4.14.1
 tzdata==2025.2
 tzlocal==5.3.1
+uvicorn[standard]==0.34.0

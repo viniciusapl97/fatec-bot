@@ -89,6 +89,8 @@ HELP_TEXT = (
     "• /import - (Avançado) Cadastra matérias em massa a partir de um arquivo JSON.\n"
     "• /exportar - Baixa uma cópia de todos os seus dados em JSON.\n"
     "• /exportarcalendario - Baixa seus trabalhos e provas em formato .ics (Google Agenda, Apple Calendário, Outlook).\n"
+    "• /tokendeacesso - (Avançado) Gera um token de acesso pessoal para usar o app/API.\n"
+    "• /revogartokens - Revoga todos os seus tokens de acesso.\n"
     "• /deletardados - Apaga todos os seus dados do bot.\n"
     "• /privacidade - Mostra a política de privacidade.\n"
     "• /cancelar - <b>(Importante!)</b> Interrompe qualquer operação."
@@ -384,6 +386,17 @@ NOTIFICATION_HOUR_STATUS = (
     "🕒 <b>Horário dos avisos automáticos de prazo:</b> {hour}h\n\n"
     "Escolha um novo horário abaixo (funciona junto com /notificacoes)."
 )
+
+# --- Token de acesso pessoal (/tokendeacesso, /revogartokens) ---
+ACCESS_TOKEN_GENERATED = (
+    "🔑 <b>Seu token de acesso pessoal:</b>\n\n"
+    "<code>{token}</code>\n\n"
+    "⚠️ Trate isso como uma senha — quem tiver esse token tem acesso total aos seus dados pelo app/API. "
+    "Só aparece <b>uma vez</b>; se perder, gere um novo com /tokendeacesso.\n\n"
+    "Se você acha que esse token vazou, use /revogartokens para invalidar todos de uma vez."
+)
+ACCESS_TOKENS_REVOKED = "✅ {count} token(s) de acesso revogado(s). Gere um novo com /tokendeacesso quando precisar."
+ACCESS_TOKENS_NONE_TO_REVOKE = "Você não tinha nenhum token de acesso ativo."
 
 
 

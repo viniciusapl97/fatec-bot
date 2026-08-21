@@ -108,9 +108,15 @@ Todos os textos enviados pelo bot estão centralizados em `bot/core/dialogs.py`,
    python main.py
    ```
 
+8. **(Opcional) Subir a API** — usada pelo site/app, ver seção "API" abaixo
+   ```bash
+   uvicorn api.main:app --reload
+   ```
+
 ### Estrutura de pastas
 ```
 /
+├── api/                    # API HTTP (FastAPI) — site/app, ver "API" abaixo
 ├── bot/
 │   ├── core/
 │   │   ├── dialogs.py      # Textos do bot
@@ -149,8 +155,19 @@ alembic upgrade head
 alembic downgrade -1
 ```
 `migrations/env.py` já lê a `DATABASE_URL` das mesmas variáveis de ambiente do resto do projeto (via `bot/core/settings.py`) — não precisa configurar nada em `alembic.ini`.
+
+### API
+A pasta `api/` expõe os mesmos `bot/services/` por HTTP (FastAPI), pro site e pro app React Native reaproveitarem sem duplicar regra de negócio — o bot continua funcionando sozinho, a API é só mais um "cliente" desses services.
+
+```bash
+uvicorn api.main:app --reload
+```
+- Docs interativas (Swagger) em `http://localhost:8000/docs`.
+- **Autenticação**: token de acesso pessoal, não login por e-mail/senha. Gere um enviando `/tokendeacesso` pro bot (aparece só uma vez — guarde num lugar seguro) e mande em toda requisição como `Authorization: Bearer <token>`. Se suspeitar que vazou, `/revogartokens` no bot invalida todos de uma vez.
+- Endpoints atuais: `GET /health` (sem auth), `GET /me`, `GET /subjects` — mais virão conforme o site/app forem crescendo (ver `docs/ROADMAP.md`).
+
 ### Rodando os testes
-Os testes cobrem a camada de `bot/services/` e usam SQLite em memória, sem precisar de Postgres nem de token do Telegram de verdade:
+Os testes cobrem `bot/services/` e a `api/` (via `TestClient` do FastAPI) e usam SQLite em memória, sem precisar de Postgres nem de token do Telegram de verdade:
 ```bash
 pip install -r requirements-dev.txt
 pytest

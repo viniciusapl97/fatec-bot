@@ -25,6 +25,9 @@ python seed_db.py
 pytest
 pytest tests/test_subject_service.py                              # one file
 pytest tests/test_subject_service.py::test_get_attendance_info_ok_status  # one test
+
+# Run the API locally (needs the same .env as the bot)
+uvicorn api.main:app --reload   # docs at http://localhost:8000/docs
 ```
 
 There is no linter/formatter configured in this repo.
@@ -65,6 +68,13 @@ Every multi-step flow (`/addmateria`, `/faltei`, `/lembrar`, `/fatec`, etc.) is 
 - **`CourseSubject` vs `Subject`**: `CourseSubject` is a shared, global catalog table (course/shift/semester → subject template) populated by `seed_db.py` from `data/courses.json`, used only by the `/fatec` onboarding (`fatec_handler.py` + `course_service.py`) to bulk-create a specific student's real, per-user `Subject` rows via `subject_service.bulk_create_from_course_subjects`. Don't confuse the two.
 - **Admin commands** (`/broadcast`, `/enviar`) are gated by `@admin_only` (`bot/decorators.py`), which checks membership in `ADMIN_USER_IDS`.
 
+### API (`api/`)
+
+A FastAPI app that exposes `bot/services/` over HTTP, for the (future) web/React Native clients — it's a second, independent consumer of the same services layer that `bot/handlers/` already uses, not a rewrite of anything. `api/main.py` is the ASGI app; `api/deps.py` has the two shared dependencies (`get_db`, `get_current_user`); `api/routers/*.py` are one file per resource; `api/schemas.py` has the Pydantic response models (kept separate from `bot/db/models.py` on purpose, so a DB column change doesn't silently change the API contract).
+
+- **Auth is a personal access token, not the Telegram Login Widget** (that's reserved for the eventual public-facing website — see `docs/ROADMAP.md`). `/tokendeacesso` in the bot (`bot/handlers/user_settings_handler.py`) generates one via `access_token_service.create_access_token`; only its SHA-256 hash is stored (`AccessToken.token_hash`), so the plaintext is shown exactly once and can't be recovered — `/revogartokens` deletes all of a user's tokens if one leaks. Send it as `Authorization: Bearer <token>`; `api/deps.get_current_user` resolves it back to a `User` via `access_token_service.get_user_by_token`.
+- Adding an endpoint = add a Pydantic schema in `api/schemas.py`, a router function in `api/routers/` that takes `user: User = Depends(get_current_user)` (and `db: Session = Depends(get_db)` if it needs to query more than `user` itself), call the matching `bot/services/*` function, and `include_router(...)` it in `api/main.py`.
+
 ### Migrations (Alembic)
 
 Schema changes go through Alembic (`migrations/`), not `Base.metadata.create_all()` — `main.py` no longer calls it. `migrations/env.py` imports `bot.db.base.Base` + `bot.db.models` and sets `sqlalchemy.url` from `bot.core.settings.DATABASE_URL` at runtime (nothing hardcoded in `alembic.ini`), so it always uses the same env vars as the app itself.
@@ -75,9 +85,10 @@ Schema changes go through Alembic (`migrations/`), not `Base.metadata.create_all
 
 ### Testing gotchas
 
-- `bot/db/base.py`'s exact `create_engine(DATABASE_URL, pool_pre_ping=True)` call works fine against `sqlite:///:memory:` for tests — SQLAlchemy auto-selects `SingletonThreadPool` for in-memory SQLite, so state persists across multiple `SessionLocal()` calls within the same thread/test.
+- `bot/db/base.py` forces `poolclass=StaticPool` + `connect_args={"check_same_thread": False}` whenever `DATABASE_URL` starts with `sqlite` (tests only — Postgres in production is unaffected). Without this, SQLite's default per-thread pool gives FastAPI's `TestClient` (which runs the ASGI app in its own thread) a completely separate, empty in-memory database from the one the test's `db` fixture set up — surfaces as `sqlite3.OperationalError: no such table: ...` from inside API test requests, not from the fixture itself. `StaticPool` makes every thread share the one connection instead.
 - SQLite does **not** preserve `tzinfo` on `DateTime(timezone=True)` columns (Postgres does, via `TIMESTAMPTZ`); tests touching `Reminder.remind_at` compare with `.replace(tzinfo=None)` on both sides to sidestep this SQLite-only quirk.
 - No local Postgres binary in this environment, but `docker run postgres:16-alpine` works and is the way to validate anything migration/Postgres-type-related for real instead of trusting SQLite's looser typing.
+- `api/` tests use FastAPI's `TestClient` (`tests/test_api.py`) — real HTTP requests through the actual ASGI app, reusing the same `db`/`user` fixtures as the service tests. No mocking needed, unlike the Telegram handlers.
 
 ### Editor tooling gotcha
 

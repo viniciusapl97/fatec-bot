@@ -172,6 +172,35 @@ Depois da correção dos bugs, implementado nesta ordem:
     no meio do nome do pacote). Precisei reescrever o arquivo via shell
     (heredoc) pra forçar UTF-8. Detalhe registrado no `CLAUDE.md` pra não
     se repetir.
+19. **Primeira fatia da API** (`api/`) — começo da implementação do plano de
+    frontend web/app (ver seção abaixo). FastAPI expondo `bot/services/` por
+    HTTP, sem duplicar lógica nenhuma:
+    - Autenticação por **token de acesso pessoal** (não Login Widget — esse
+      fica pro site, mais pra frente). Novo model `AccessToken`
+      (`bot/db/models.py`) guarda só o hash SHA-256 do token; comandos
+      `/tokendeacesso` (gera, mostra uma vez só) e `/revogartokens`
+      (invalida todos de uma vez) em `user_settings_handler.py`. Migration
+      `e00d525f47d4_adiciona_access_tokens`.
+    - Endpoints: `GET /health` (sem auth), `GET /me`, `GET /subjects`.
+    - `api/deps.py` tem as duas dependências compartilhadas (`get_db`,
+      `get_current_user`); `api/schemas.py` tem os modelos Pydantic de
+      resposta, deliberadamente separados de `bot/db/models.py` pra uma
+      mudança de coluna não vazar sem querer pro contrato da API.
+    - **Achado no processo**: testar a API com o `TestClient` do FastAPI
+      contra o SQLite dos testes dava `sqlite3.OperationalError: no such
+      table` — o `TestClient` roda a app numa thread separada da do teste,
+      e o pool padrão do SQLite cria um banco em memória novo por thread.
+      `bot/db/base.py` agora força `StaticPool` (+ `check_same_thread:
+      False`) só quando a URL é `sqlite`, o que resolve isso sem afetar o
+      Postgres de produção em nada.
+    - Testado de ponta a ponta contra Postgres real (container Docker,
+      removido ao final): gerar token pelo bot → autenticar na API →
+      `/me` e `/subjects` retornando os dados certos → token inválido
+      rejeitado (401) → sem token rejeitado (403) → revogar invalida na
+      hora. Rodei também com `uvicorn` de verdade (não só `TestClient`),
+      incluindo o `/docs` (Swagger) que vem de brinde com o FastAPI.
+    - 12 testes novos (`tests/test_access_token_service.py`,
+      `tests/test_api.py`). Suíte total: **100 testes**.
 
 Ver `git log` para o histórico completo de commits de cada item.
 
@@ -181,20 +210,30 @@ Ver `git log` para o histórico completo de commits de cada item.
   propósito — exigem mockar bastante a API do `python-telegram-bot`; os
   `services/` concentram a lógica de negócio testável isoladamente).
 
-## 💭 Em standby: frontend web + app Android/iOS
+## 🚧 Em andamento: API → depois frontend web + app Android/iOS
 
-Ideia discutida em 2026-08-21, guardada pra depois — usuário pediu explicitamente
-pra só anotar, sem implementar nada por enquanto. Evoluiu ao longo da conversa:
-começou como "só um site" → depois "site + widget Android" → decisão final foi
-"site + app completo (React Native), com widget, iOS talvez um dia".
+Ideia discutida em 2026-08-21, guardada em standby, depois retomada no mesmo
+dia — usuário pediu pra começar a implementação da API. Evoluiu ao longo da
+conversa: começou como "só um site" → depois "site + widget Android" →
+decisão final "site + app completo (React Native), com widget, iOS talvez um
+dia" → **API em implementação agora** (ver item 19 em ✅ Feito).
 
 ### A base: API por cima de `bot/services/`
 Toda a regra de negócio já está isolada em `bot/services/`, sem nenhuma
 dependência do Telegram — dá pra expor esses mesmos services por trás de uma
-API (ex.: FastAPI) sem reescrever a lógica. **Isso é o que o site e o app têm
-em comum** — a UI de cada um é separada (ver stack abaixo), só a API é
-compartilhada. Comece por aqui, independente de qual cliente (site ou app)
-vier primeiro.
+API (FastAPI, `api/`) sem reescrever a lógica. **Isso é o que o site e o app
+têm em comum** — a UI de cada um é separada (ver stack abaixo), só a API é
+compartilhada.
+
+### Próximos endpoints/passos da API (nenhum implementado ainda)
+- Endpoints de leitura que faltam: atividades (`/activities`), faltas
+  (`/absences`), notas (`/grades`), frequência/média (reaproveitar
+  `subject_service.get_attendance_info` / `grade_service.get_average`).
+- Endpoints de escrita (criar/editar/apagar matéria, atividade, falta, nota) —
+  a "paridade completa" do app com o bot depende disso.
+- Decidir se listagens ganham paginação real (a API não tem o limite de 4096
+  caracteres do Telegram, mas listas grandes ainda merecem paginação por
+  performance/UX).
 
 ### Stack decidida
 - **Site**: React.
@@ -225,9 +264,9 @@ vier primeiro.
   (`user_id`, nome, username, foto) pro backend validar o hash. Zero senha
   nova pra gerenciar, e o `user_id` já bate com `User.user_id` no banco.
 - **App/widget**: como esse app é só pra uso pessoal (sideload, sem loja), não
-  vale a pena replicar o fluxo de Login Widget — mais simples é o bot gerar um
-  **token de acesso pessoal** (ex. comando `/tokendeacesso`) vinculado ao seu
-  `user_id`, colado uma vez na configuração do app.
+  vale a pena replicar o fluxo de Login Widget — mais simples é o **token de
+  acesso pessoal** vinculado ao `user_id`, colado uma vez na configuração do
+  app. **Já implementado** (item 19): `/tokendeacesso` no bot.
 
 ### Estimativa por nível de ambição
 - MVP somente-leitura (login + ver grade/notas/faltas/frequência/calendário),

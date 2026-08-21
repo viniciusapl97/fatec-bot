@@ -21,6 +21,7 @@ class User(Base):
     absences = relationship("Absence", back_populates="owner", cascade="all, delete-orphan")
     grades = relationship("Grade", back_populates="owner", cascade="all, delete-orphan")
     reminders = relationship("Reminder", back_populates="owner", cascade="all, delete-orphan")
+    access_tokens = relationship("AccessToken", back_populates="owner", cascade="all, delete-orphan")
 
 class Subject(Base):
     __tablename__ = "subjects"
@@ -106,6 +107,24 @@ class Reminder(Base):
     user_id = Column(BigInteger, ForeignKey("users.user_id"), nullable=False)
 
     owner = relationship("User", back_populates="reminders")
+
+
+class AccessToken(Base):
+    """
+    Token de acesso pessoal (/tokendeacesso) usado pelo app/API pra autenticar
+    como um usuário, sem precisar do fluxo de login web (Telegram Login Widget).
+    Guarda só o hash do token — o valor em texto puro só existe no momento em
+    que é gerado e mostrado ao usuário pelo bot.
+    """
+    __tablename__ = "access_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    token_hash = Column(String, unique=True, nullable=False, index=True)
+    user_id = Column(BigInteger, ForeignKey("users.user_id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False)
+    last_used_at = Column(DateTime(timezone=True), nullable=True)
+
+    owner = relationship("User", back_populates="access_tokens")
 
 
 class CourseSubject(Base):

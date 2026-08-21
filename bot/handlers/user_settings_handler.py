@@ -11,7 +11,7 @@ from telegram.ext import (
 )
 
 from bot.db.base import SessionLocal
-from bot.services import user_service
+from bot.services import user_service, access_token_service
 from bot.core import dialogs
 from bot.core.conversation_timeout import CONVERSATION_TIMEOUT_SECONDS, notify_conversation_timeout
 
@@ -148,6 +148,43 @@ def setup_notification_hour_handler() -> list:
     return [
         CommandHandler("horarionotificacao", notification_hour_status),
         CallbackQueryHandler(set_notification_hour_callback, pattern="^set_notif_hour_"),
+    ]
+
+
+# =============================================================================
+# Token de acesso pessoal pro app/API (/tokendeacesso, /revogartokens)
+# =============================================================================
+
+async def generate_access_token(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Gera um novo token de acesso pessoal e mostra pro usuário (só dessa vez)."""
+    telegram_user = update.effective_user
+
+    with SessionLocal() as db:
+        user, _ = user_service.get_or_create_user(db, telegram_user.id, telegram_user.first_name, telegram_user.username)
+        token = access_token_service.create_access_token(db, user)
+
+    await update.message.reply_html(dialogs.ACCESS_TOKEN_GENERATED.format(token=token))
+
+
+async def revoke_access_tokens(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Revoga todos os tokens de acesso do usuário de uma vez."""
+    telegram_user = update.effective_user
+
+    with SessionLocal() as db:
+        user, _ = user_service.get_or_create_user(db, telegram_user.id, telegram_user.first_name, telegram_user.username)
+        count = access_token_service.revoke_all_access_tokens(db, user)
+
+    if count:
+        await update.message.reply_html(dialogs.ACCESS_TOKENS_REVOKED.format(count=count))
+    else:
+        await update.message.reply_text(dialogs.ACCESS_TOKENS_NONE_TO_REVOKE)
+
+
+def setup_access_token_handler() -> list:
+    """Cria os handlers de comando para /tokendeacesso e /revogartokens."""
+    return [
+        CommandHandler("tokendeacesso", generate_access_token),
+        CommandHandler("revogartokens", revoke_access_tokens),
     ]
 
 

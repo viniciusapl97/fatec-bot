@@ -26,7 +26,7 @@ from bot.handlers.import_handler import setup_import_handler
 from bot.handlers.export_handler import export_data, export_calendar
 from bot.handlers.bug_report_handler import setup_bug_report_handler
 from bot.handlers.fatec_handler import setup_fatec_handler
-from bot.handlers.user_settings_handler import setup_delete_user_handler, setup_notifications_handler, setup_notification_hour_handler
+from bot.handlers.user_settings_handler import setup_delete_user_handler, setup_notifications_handler, setup_notification_hour_handler, setup_access_token_handler
 from bot.handlers.admin_handler import setup_admin_handlers
 from bot.jobs import check_deadlines_job, send_weekly_summary_job
 
@@ -74,6 +74,8 @@ async def post_init_configuration(application: Application) -> None:
         BotCommand("privacidade", "Mostra a política de privacidade"),
         BotCommand("notificacoes", "Ativa ou desativa os avisos automáticos de prazo"),
         BotCommand("horarionotificacao", "Escolhe o horário dos avisos automáticos de prazo"),
+        BotCommand("tokendeacesso", "Gera um token de acesso pessoal para o app/API"),
+        BotCommand("revogartokens", "Revoga todos os seus tokens de acesso"),
     ]
     await application.bot.set_my_commands(commands)
 
@@ -156,6 +158,7 @@ def main() -> None:
     application.add_handler(setup_delete_user_handler())
     application.add_handlers(setup_notifications_handler())
     application.add_handlers(setup_notification_hour_handler())
+    application.add_handlers(setup_access_token_handler())
     application.add_handlers(setup_admin_handlers())
     application.add_handler(setup_reminder_handler())
     application.add_handlers(setup_reminder_list_handler())
