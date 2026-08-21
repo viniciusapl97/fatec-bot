@@ -9,7 +9,7 @@ from telegram.ext import (
     CallbackQueryHandler,
     Defaults,
 )
-from datetime import time
+from datetime import time, timedelta
 
 from bot.core.settings import TELEGRAM_TOKEN, TIMEZONE
 from bot.db.base import Base, engine, SessionLocal
@@ -27,7 +27,7 @@ from bot.handlers.import_handler import setup_import_handler
 from bot.handlers.export_handler import export_data, export_calendar
 from bot.handlers.bug_report_handler import setup_bug_report_handler
 from bot.handlers.fatec_handler import setup_fatec_handler
-from bot.handlers.user_settings_handler import setup_delete_user_handler, setup_notifications_handler
+from bot.handlers.user_settings_handler import setup_delete_user_handler, setup_notifications_handler, setup_notification_hour_handler
 from bot.handlers.admin_handler import setup_admin_handlers
 from bot.jobs import check_deadlines_job, send_weekly_summary_job
 
@@ -74,6 +74,7 @@ async def post_init_configuration(application: Application) -> None:
         BotCommand("exportarcalendario", "Baixa seus trabalhos e provas em formato .ics"),
         BotCommand("privacidade", "Mostra a política de privacidade"),
         BotCommand("notificacoes", "Ativa ou desativa os avisos automáticos de prazo"),
+        BotCommand("horarionotificacao", "Escolhe o horário dos avisos automáticos de prazo"),
     ]
     await application.bot.set_my_commands(commands)
 
@@ -118,8 +119,9 @@ def main() -> None:
 
      # --- Agendamento de Tarefas Recorrentes ---
     job_queue = application.job_queue
-    # Agenda a tarefa para rodar todo dia às 09:00 da manhã
-    job_queue.run_daily(check_deadlines_job, time=time(hour=9, minute=0), name="check_deadlines_daily")
+    # Roda de hora em hora: check_deadlines_job filtra por dentro quem tem
+    # /horarionotificacao igual à hora atual (o horário não é mais único e fixo)
+    job_queue.run_repeating(check_deadlines_job, interval=timedelta(hours=1), first=0, name="check_deadlines_hourly")
     # Agenda o resumo semanal para toda segunda às 08:00 da manhã
     # (days: 0-6 = domingo-sábado na convenção do python-telegram-bot v20+, então segunda = 1)
     job_queue.run_daily(send_weekly_summary_job, time=time(hour=8, minute=0), days=(1,), name="weekly_summary")
@@ -154,6 +156,7 @@ def main() -> None:
     application.add_handler(setup_fatec_handler())
     application.add_handler(setup_delete_user_handler())
     application.add_handlers(setup_notifications_handler())
+    application.add_handlers(setup_notification_hour_handler())
     application.add_handlers(setup_admin_handlers())
     application.add_handler(setup_reminder_handler())
     application.add_handlers(setup_reminder_list_handler())

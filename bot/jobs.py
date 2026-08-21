@@ -2,21 +2,26 @@
 
 import logging
 from collections import defaultdict
+from datetime import datetime
 from telegram.ext import ContextTypes
 
 from bot.db.base import SessionLocal
 from bot.services import user_service
 from bot.core import dialogs
+from bot.core.settings import TIMEZONE
 from bot.handlers.common import build_week_summary_message
 
 logger = logging.getLogger(__name__)
 
 async def check_deadlines_job(context: ContextTypes.DEFAULT_TYPE):
     """
-    A tarefa que roda diariamente para verificar e enviar lembretes de prazos.
+    Roda de hora em hora e envia avisos de prazo (1/3 dias antes de vencer)
+    apenas para os usuários cujo horário de notificação preferido
+    (/horarionotificacao) é a hora atual.
     """
-    logger.info("Executando a tarefa de verificação de prazos (check_deadlines_job)...")
-    
+    current_hour = datetime.now(TIMEZONE).hour
+    logger.info("Executando a tarefa de verificação de prazos (check_deadlines_job) para a hora %d...", current_hour)
+
     reminders_to_send = defaultdict(list)
 
     with SessionLocal() as db:
@@ -43,10 +48,12 @@ async def check_deadlines_job(context: ContextTypes.DEFAULT_TYPE):
             )
 
         disabled_user_ids = user_service.get_user_ids_with_notifications_disabled(db)
+        eligible_user_ids = user_service.get_user_ids_with_notification_hour(db, current_hour)
 
-    # Envia os lembretes agrupados por usuário (pulando quem desativou em /notificacoes)
+    # Envia os lembretes agrupados por usuário (pulando quem desativou, ou
+    # cujo horário preferido não é agora)
     for user_id, messages in reminders_to_send.items():
-        if user_id in disabled_user_ids:
+        if user_id in disabled_user_ids or user_id not in eligible_user_ids:
             continue
         full_message = dialogs.REMINDER_AUTOMATIC_HEADER + "\n\n".join(messages)
         try:

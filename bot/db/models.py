@@ -13,6 +13,7 @@ class User(Base):
     first_name = Column(String, nullable=False)
     username = Column(String, nullable=True)
     notifications_enabled = Column(Boolean, default=True, nullable=False)
+    notification_hour = Column(Integer, default=9, nullable=False)  # Hora (0-23) dos avisos automáticos de prazo
 
     # Relações
     subjects = relationship("Subject", back_populates="owner", cascade="all, delete-orphan")

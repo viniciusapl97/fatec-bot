@@ -79,7 +79,8 @@ HELP_TEXT = (
     "🔔 <b>Lembretes e Notificações</b>\n"
     "• /lembrar - Cria um lembrete personalizado.\n"
     "• /meuslembretes - Lista e permite cancelar seus lembretes pendentes.\n"
-    "• /notificacoes - Ativa ou desativa os avisos automáticos de prazo.\n\n"
+    "• /notificacoes - Ativa ou desativa os avisos automáticos de prazo.\n"
+    "• /horarionotificacao - Escolhe o horário desses avisos.\n\n"
 
     "⚙️ <b>Comandos Gerais</b>\n"
     "• /start - Mostra o menu principal.\n"
@@ -378,6 +379,11 @@ NOTIFICATIONS_STATUS = (
 )
 NOTIFICATIONS_BUTTON_DISABLE = "🔕 Desativar"
 NOTIFICATIONS_BUTTON_ENABLE = "🔔 Ativar"
+
+NOTIFICATION_HOUR_STATUS = (
+    "🕒 <b>Horário dos avisos automáticos de prazo:</b> {hour}h\n\n"
+    "Escolha um novo horário abaixo (funciona junto com /notificacoes)."
+)
 
 
 

@@ -104,13 +104,26 @@ Depois da correção dos bugs, implementado nesta ordem:
     como possível refinamento futuro). Registrado em `setup_admin_handlers()`
     junto com `/broadcast`/`/enviar`, protegido por `@admin_only`. 2 testes
     novos em `tests/test_stats_service.py`.
+16. Horário de notificação configurável por usuário
+    (`/horarionotificacao`) — grade de botões 0h-23h,
+    `User.notification_hour` (default 9). Isso mudou a arquitetura do job
+    de prazos: antes `check_deadlines_job` rodava **uma vez por dia** às
+    9h fixas pra todo mundo (`run_daily`); agora roda **de hora em hora**
+    (`run_repeating(..., interval=timedelta(hours=1))`) e filtra por
+    dentro quem tem `notification_hour == hora_atual` via
+    `user_service.get_user_ids_with_notification_hour`. 3 testes novos em
+    `tests/test_user_service.py`.
+
+    ⚠️ **Migração pendente em produção**: assim como `notifications_enabled`
+    (item 13), a coluna `notification_hour` só é criada automaticamente em
+    bancos novos via `create_all()`. Numa instância já rodando é preciso
+    `ALTER TABLE users ADD COLUMN notification_hour INTEGER NOT NULL DEFAULT 9;`
+    antes do deploy — reforça por que Alembic (ver abaixo) vale a pena.
 
 Ver `git log` para o histórico completo de commits de cada item.
 
 ## 🔭 Mais ambiciosas / longo prazo
 
-- Horário de notificação configurável por usuário (hoje é fixo às 9h pra
-  todo mundo).
 - Paginação em `/grade`/`/calendario` pra quem acumular muitas
   matérias/atividades.
 - Migrations com Alembic em vez de `Base.metadata.create_all()` — hoje

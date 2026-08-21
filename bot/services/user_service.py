@@ -66,3 +66,14 @@ def set_notifications_enabled(db: Session, user: User, enabled: bool) -> User:
 def get_user_ids_with_notifications_disabled(db: Session) -> set[int]:
     """Retorna o conjunto de user_id que desativaram as notificações automáticas de prazo."""
     return {row[0] for row in db.query(User.user_id).filter(User.notifications_enabled == False).all()}
+
+def set_notification_hour(db: Session, user: User, hour: int) -> User:
+    """Define a hora do dia (0-23) em que o usuário quer receber os avisos automáticos de prazo."""
+    user.notification_hour = hour
+    db.commit()
+    db.refresh(user)
+    return user
+
+def get_user_ids_with_notification_hour(db: Session, hour: int) -> set[int]:
+    """Retorna o conjunto de user_id cujo horário de notificação preferido é a hora informada (0-23)."""
+    return {row[0] for row in db.query(User.user_id).filter(User.notification_hour == hour).all()}

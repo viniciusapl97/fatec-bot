@@ -97,3 +97,25 @@ def test_get_user_ids_with_notifications_disabled(db, user):
 
     disabled = user_service.get_user_ids_with_notifications_disabled(db)
     assert disabled == {other_user.user_id}
+
+
+def test_new_user_has_notification_hour_9_by_default(db, user):
+    assert user.notification_hour == 9
+
+
+def test_set_notification_hour_persists(db, user):
+    user_service.set_notification_hour(db, user, 14)
+    assert user.notification_hour == 14
+
+    reloaded = user_service.get_user_by_telegram_id(db, user.user_id)
+    assert reloaded.notification_hour == 14
+
+
+def test_get_user_ids_with_notification_hour_filters_correctly(db, user):
+    other_user, _ = user_service.get_or_create_user(db, 999, "Outro", "outro")
+    user_service.set_notification_hour(db, user, 9)
+    user_service.set_notification_hour(db, other_user, 20)
+
+    assert user_service.get_user_ids_with_notification_hour(db, 9) == {user.user_id}
+    assert user_service.get_user_ids_with_notification_hour(db, 20) == {other_user.user_id}
+    assert user_service.get_user_ids_with_notification_hour(db, 3) == set()

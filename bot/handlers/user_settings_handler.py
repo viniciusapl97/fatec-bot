@@ -100,6 +100,57 @@ def setup_notifications_handler() -> list:
     ]
 
 
+# =============================================================================
+# Horário dos avisos automáticos de prazo (/horarionotificacao)
+# =============================================================================
+
+def _build_notification_hour_view(current_hour: int):
+    """Monta o texto e a grade de botões (0h-23h) pra escolher o horário dos avisos."""
+    text = dialogs.NOTIFICATION_HOUR_STATUS.format(hour=current_hour)
+    keyboard = []
+    for row_start in range(0, 24, 6):
+        row = []
+        for hour in range(row_start, row_start + 6):
+            label = f"✅ {hour}h" if hour == current_hour else f"{hour}h"
+            row.append(InlineKeyboardButton(label, callback_data=f"set_notif_hour_{hour}"))
+        keyboard.append(row)
+    return text, InlineKeyboardMarkup(keyboard)
+
+
+async def notification_hour_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Mostra o horário atual dos avisos de prazo, com botões pra trocar."""
+    telegram_user = update.effective_user
+
+    with SessionLocal() as db:
+        user, _ = user_service.get_or_create_user(db, telegram_user.id, telegram_user.first_name, telegram_user.username)
+        text, reply_markup = _build_notification_hour_view(user.notification_hour)
+
+    await update.message.reply_html(text, reply_markup=reply_markup)
+
+
+async def set_notification_hour_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Define a nova hora escolhida para os avisos automáticos de prazo."""
+    query = update.callback_query
+    await query.answer()
+    hour = int(query.data.split('_')[-1])
+    telegram_user = query.from_user
+
+    with SessionLocal() as db:
+        user, _ = user_service.get_or_create_user(db, telegram_user.id, telegram_user.first_name, telegram_user.username)
+        user_service.set_notification_hour(db, user, hour)
+        text, reply_markup = _build_notification_hour_view(user.notification_hour)
+
+    await query.edit_message_text(text, reply_markup=reply_markup, parse_mode='HTML')
+
+
+def setup_notification_hour_handler() -> list:
+    """Cria os handlers (comando + callback) para /horarionotificacao."""
+    return [
+        CommandHandler("horarionotificacao", notification_hour_status),
+        CallbackQueryHandler(set_notification_hour_callback, pattern="^set_notif_hour_"),
+    ]
+
+
 def setup_delete_user_handler() -> ConversationHandler:
     """Cria e configura o ConversationHandler para /deletardados."""
     return ConversationHandler(
