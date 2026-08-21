@@ -155,6 +155,76 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 # Seção 2: Handler de Comando para /grade (Leitura)
 # =============================================================================
 
+SUBJECT_DAYS_PER_PAGE = 2
+SAFE_MESSAGE_LENGTH = 3500  # abaixo do limite de 4096 do Telegram, com folga pro rodapé de paginação
+
+
+def _build_subject_day_blocks(db, subjects: list) -> list:
+    """Agrupa as matérias por dia da semana; cada item da lista é o texto completo de um dia."""
+    days = defaultdict(list)
+    for s in subjects:
+        days[s.day_of_week].append(s)
+
+    weekdays = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"]
+    blocks = []
+    for d in weekdays:
+        day_subjects = days.get(d, [])
+        if not day_subjects:
+            continue
+
+        block = dialogs.SUBJECT_LIST_DAY_HEADER.format(day=d.upper())
+        for s in day_subjects:
+            block += dialogs.SUBJECT_LIST_ITEM.format(
+                st=s.start_time.strftime('%H:%M') if s.start_time else '--:--',
+                et=s.end_time.strftime('%H:%M') if s.end_time else '--:--',
+                name=s.name,
+                professor=s.professor,
+                room=s.room
+            )
+            grades = grade_service.get_grades_by_subject(db, s)
+            if grades:
+                gl = ", ".join(f"<b>{g.name}</b>: {g.value:.2f}" for g in grades)
+                block += dialogs.SUBJECT_LIST_GRADES_LINE.format(grades=gl)
+            if s.total_absences > 0:
+                block += dialogs.SUBJECT_LIST_ABSENCES_LINE.format(absences=s.total_absences)
+            block += "\n"  # espaço entre matérias de um mesmo dia
+        block += dialogs.SEPARATOR
+        blocks.append(block)
+
+    return blocks
+
+
+def build_subject_list_view(db, subjects: list, page: int = 0):
+    """
+    Monta o texto do /grade. Se a grade inteira couber numa mensagem, manda
+    tudo de uma vez (comportamento de sempre); só pagina — por dia da
+    semana, nunca cortando um dia no meio — quando não couber.
+    """
+    if not subjects:
+        return dialogs.SUBJECT_LIST_NO_SUBJECTS, None
+
+    blocks = _build_subject_day_blocks(db, subjects)
+    full_message = dialogs.SUBJECT_LIST_HEADER + "".join(blocks)
+    if len(full_message) <= SAFE_MESSAGE_LENGTH:
+        return full_message, None
+
+    start = page * SUBJECT_DAYS_PER_PAGE
+    end = start + SUBJECT_DAYS_PER_PAGE
+    total_pages = (len(blocks) - 1) // SUBJECT_DAYS_PER_PAGE + 1
+
+    message = dialogs.SUBJECT_LIST_HEADER + "".join(blocks[start:end])
+    message += f"\nPágina {page + 1} de {total_pages}"
+
+    nav_buttons = []
+    if page > 0:
+        nav_buttons.append(InlineKeyboardButton("⬅️ Anterior", callback_data=f"subject_page_{page - 1}"))
+    if end < len(blocks):
+        nav_buttons.append(InlineKeyboardButton("Próxima ➡️", callback_data=f"subject_page_{page + 1}"))
+    reply_markup = InlineKeyboardMarkup([nav_buttons]) if nav_buttons else None
+
+    return message, reply_markup
+
+
 async def list_subjects(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Lista as matérias com a nova formatação de grade aprimorada."""
     query = update.callback_query
@@ -164,54 +234,34 @@ async def list_subjects(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     else:
         telegram_user = update.effective_user
 
-    message = ""
     with SessionLocal() as db:
         user, _ = user_service.get_or_create_user(
             db, telegram_user.id, telegram_user.first_name, telegram_user.username
         )
         subjects = subject_service.get_subjects_by_user(db, user)
+        message, reply_markup = build_subject_list_view(db, subjects, page=0)
 
-        if not subjects:
-            message = dialogs.SUBJECT_LIST_NO_SUBJECTS
-        else:
-            days = defaultdict(list)
-            for s in subjects:
-                days[s.day_of_week].append(s)
-            
-            message = dialogs.SUBJECT_LIST_HEADER
-            weekdays = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"]
-            
-            for d in weekdays:
-                day_subjects = days.get(d, [])
-                if day_subjects:
-                    message += dialogs.SUBJECT_LIST_DAY_HEADER.format(day=d.upper())
-                    for s in day_subjects:
-                        message += dialogs.SUBJECT_LIST_ITEM.format(
-                            st=s.start_time.strftime('%H:%M') if s.start_time else '--:--',
-                            et=s.end_time.strftime('%H:%M') if s.end_time else '--:--',
-                            name=s.name,
-                            professor=s.professor,
-                            room=s.room
-                        )
-                        
-                        grades = grade_service.get_grades_by_subject(db, s)
-                        if grades:
-                            gl = ", ".join(f"<b>{g.name}</b>: {g.value:.2f}" for g in grades)
-                            message += dialogs.SUBJECT_LIST_GRADES_LINE.format(grades=gl)
-                        
-                        if s.total_absences > 0:
-                            message += dialogs.SUBJECT_LIST_ABSENCES_LINE.format(absences=s.total_absences)
-                        
-                        # Adiciona um pequeno espaço entre as matérias de um mesmo dia
-                        message += "\n"
-
-                    # Adiciona o separador no final de cada dia com aulas
-                    message += dialogs.SEPARATOR
-    
     if query:
-        await query.edit_message_text(message, parse_mode='HTML')
+        await query.edit_message_text(message, reply_markup=reply_markup, parse_mode='HTML')
     else:
-        await update.message.reply_html(message)
+        await update.message.reply_html(message, reply_markup=reply_markup)
+
+
+async def subject_list_page_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Navega entre as páginas do /grade quando a grade não coube numa mensagem só."""
+    query = update.callback_query
+    await query.answer()
+    page = int(query.data.split('_')[-1])
+    telegram_user = query.from_user
+
+    with SessionLocal() as db:
+        user, _ = user_service.get_or_create_user(
+            db, telegram_user.id, telegram_user.first_name, telegram_user.username
+        )
+        subjects = subject_service.get_subjects_by_user(db, user)
+        message, reply_markup = build_subject_list_view(db, subjects, page=page)
+
+    await query.edit_message_text(message, reply_markup=reply_markup, parse_mode='HTML')
 
 # =============================================================================
 # Seção 3: Handler de Conversa para /gerenciarmaterias

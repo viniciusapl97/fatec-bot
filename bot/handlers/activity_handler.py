@@ -145,6 +145,54 @@ def setup_activity_handler() -> ConversationHandler:
 # Seção 2: Lógica de Listagem e Gerenciamento
 # =============================================================================
 
+ACTIVITIES_PER_PAGE = 10
+SAFE_MESSAGE_LENGTH = 3500  # abaixo do limite de 4096 do Telegram, com folga pro rodapé de paginação
+
+
+def _build_activity_line(a) -> str:
+    icon = "📝" if a.activity_type == "trabalho" else "❗️"
+    date_str = a.due_date.strftime("%d/%m/%Y")
+    line = (
+        f"{icon} <b>{a.name}</b> ({a.activity_type.capitalize()})\n"
+        f"   • <b>Matéria:</b> {a.subject.name}\n"
+        f"   • <b>Data:</b> {date_str}\n"
+    )
+    if a.notes:
+        line += f"   • <b>Obs:</b> {a.notes}\n"
+    return line + dialogs.SEPARATOR
+
+
+def build_activity_list_view(activities: list, page: int = 0):
+    """
+    Monta o texto do /calendario. Se a lista inteira couber numa mensagem,
+    manda tudo de uma vez (comportamento de sempre); só pagina quando
+    o usuário tem atividades demais pra caber numa única mensagem.
+    """
+    if not activities:
+        return dialogs.ACTIVITY_LIST_NO_ACTIVITIES, None
+
+    full_message = dialogs.ACTIVITY_LIST_HEADER + "".join(_build_activity_line(a) for a in activities)
+    if len(full_message) <= SAFE_MESSAGE_LENGTH:
+        return full_message, None
+
+    start = page * ACTIVITIES_PER_PAGE
+    end = start + ACTIVITIES_PER_PAGE
+    total_pages = (len(activities) - 1) // ACTIVITIES_PER_PAGE + 1
+
+    message = dialogs.ACTIVITY_LIST_HEADER
+    message += "".join(_build_activity_line(a) for a in activities[start:end])
+    message += f"\nPágina {page + 1} de {total_pages}"
+
+    nav_buttons = []
+    if page > 0:
+        nav_buttons.append(InlineKeyboardButton("⬅️ Anterior", callback_data=f"activity_page_{page - 1}"))
+    if end < len(activities):
+        nav_buttons.append(InlineKeyboardButton("Próxima ➡️", callback_data=f"activity_page_{page + 1}"))
+    reply_markup = InlineKeyboardMarkup([nav_buttons]) if nav_buttons else None
+
+    return message, reply_markup
+
+
 async def list_activities(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Lista as atividades, respondendo a um comando ou editando uma mensagem de botão."""
     query = update.callback_query
@@ -157,27 +205,27 @@ async def list_activities(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     with SessionLocal() as db:
         user, _ = user_service.get_or_create_user(db, telegram_user.id, telegram_user.first_name, telegram_user.username)
         activities = activity_service.get_activities_by_user(db, user)
+        message, reply_markup = build_activity_list_view(activities, page=0)
 
-        if not activities:
-            message = dialogs.ACTIVITY_LIST_NO_ACTIVITIES
-        else:
-            message = dialogs.ACTIVITY_LIST_HEADER
-            for a in activities:
-                icon = "📝" if a.activity_type == "trabalho" else "❗️"
-                date_str = a.due_date.strftime("%d/%m/%Y")
-                message += (
-                    f"{icon} <b>{a.name}</b> ({a.activity_type.capitalize()})\n"
-                    f"   • <b>Matéria:</b> {a.subject.name}\n"
-                    f"   • <b>Data:</b> {date_str}\n"
-                )
-                if a.notes:
-                    message += f"   • <b>Obs:</b> {a.notes}\n"
-                message += dialogs.SEPARATOR
-    
     if query:
-        await query.edit_message_text(message, parse_mode="HTML")
+        await query.edit_message_text(message, reply_markup=reply_markup, parse_mode="HTML")
     else:
-        await update.message.reply_html(message)
+        await update.message.reply_html(message, reply_markup=reply_markup)
+
+
+async def activity_list_page_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Navega entre as páginas do /calendario quando a lista não coube numa mensagem só."""
+    query = update.callback_query
+    await query.answer()
+    page = int(query.data.split('_')[-1])
+    telegram_user = query.from_user
+
+    with SessionLocal() as db:
+        user, _ = user_service.get_or_create_user(db, telegram_user.id, telegram_user.first_name, telegram_user.username)
+        activities = activity_service.get_activities_by_user(db, user)
+        message, reply_markup = build_activity_list_view(activities, page=page)
+
+    await query.edit_message_text(message, reply_markup=reply_markup, parse_mode="HTML")
 
 
 async def manage_activities_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:

@@ -19,8 +19,8 @@ from bot.services import reminder_service
 # Importa todas as funções e setups de handlers
 from bot.handlers.common import start, help_command, privacy_policy, button_handler, today_command, week_command
 from bot.handlers.reminder_handler import setup_reminder_handler, setup_reminder_list_handler, schedule_reminder
-from bot.handlers.subject_handler import list_subjects, setup_subject_handler, setup_management_handler, setup_report_handler
-from bot.handlers.activity_handler import list_activities, setup_activity_handler, setup_activity_management_handler
+from bot.handlers.subject_handler import list_subjects, subject_list_page_callback, setup_subject_handler, setup_management_handler, setup_report_handler
+from bot.handlers.activity_handler import list_activities, activity_list_page_callback, setup_activity_handler, setup_activity_management_handler
 from bot.handlers.absence_handler import setup_absence_handler, setup_absence_management_handler, report_absences
 from bot.handlers.grade_handler import setup_grade_handler, setup_grade_management_handler
 from bot.handlers.import_handler import setup_import_handler
@@ -161,7 +161,9 @@ def main() -> None:
     application.add_handler(setup_reminder_handler())
     application.add_handlers(setup_reminder_list_handler())
 
-    # --- Handlers de Callback (Botões Genéricos) ---
+    # --- Handlers de Callback (Paginação e Botões Genéricos) ---
+    application.add_handler(CallbackQueryHandler(subject_list_page_callback, pattern="^subject_page_"))
+    application.add_handler(CallbackQueryHandler(activity_list_page_callback, pattern="^activity_page_"))
     application.add_handler(CallbackQueryHandler(button_handler))
 
     logger.info("Iniciando o bot e o agendador de tarefas...")

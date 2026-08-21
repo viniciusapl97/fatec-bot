@@ -119,13 +119,28 @@ Depois da correção dos bugs, implementado nesta ordem:
     bancos novos via `create_all()`. Numa instância já rodando é preciso
     `ALTER TABLE users ADD COLUMN notification_hour INTEGER NOT NULL DEFAULT 9;`
     antes do deploy — reforça por que Alembic (ver abaixo) vale a pena.
+17. Paginação em `/grade` e `/calendario` — **automática**, não muda nada
+    pra quem tem poucas matérias/atividades (o caso comum): só entra em
+    ação se a mensagem inteira não couber no limite de 4096 caracteres do
+    Telegram (checado contra um limiar conservador de 3500, com folga pro
+    rodapé "Página X de Y" + botões). `/calendario` pagina por contagem
+    fixa de itens (`ACTIVITIES_PER_PAGE = 10`); `/grade` pagina por **dia
+    da semana** (`SUBJECT_DAYS_PER_PAGE = 2`) pra nunca cortar as matérias
+    de um dia no meio entre duas páginas. Mesmo padrão de botões
+    Anterior/Próxima já usado no onboarding do `/fatec`.
+
+    Não cobri essas duas funções (`build_subject_list_view`,
+    `build_activity_list_view`) na suíte pytest — mantendo a política já
+    documentada de só testar `services/` com unidade automatizada — mas
+    validei manualmente de forma rigorosa: forcei 32 matérias e 62
+    atividades, naveguei por todas as páginas geradas conferindo que
+    nenhuma jamais ultrapassa 4096 caracteres, e testei os handlers
+    completos (comando + callback) ponta a ponta.
 
 Ver `git log` para o histórico completo de commits de cada item.
 
 ## 🔭 Mais ambiciosas / longo prazo
 
-- Paginação em `/grade`/`/calendario` pra quem acumular muitas
-  matérias/atividades.
 - Migrations com Alembic em vez de `Base.metadata.create_all()` — hoje
   qualquer mudança de coluna depende de mexer manualmente no banco em
   produção.
