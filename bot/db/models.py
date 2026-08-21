@@ -32,6 +32,7 @@ class Subject(Base):
     end_time = Column(Time, nullable=True)
     semestre = Column(Integer, nullable=True)  # GARANTA QUE ESTA LINHA ESTÁ AQUI
     total_absences = Column(Integer, default=0, nullable=False)
+    total_classes = Column(Integer, nullable=True)  # Total de aulas previstas no semestre (opcional, usado para calcular frequência)
     user_id = Column(BigInteger, ForeignKey("users.user_id"))
 
     owner = relationship("User", back_populates="subjects")

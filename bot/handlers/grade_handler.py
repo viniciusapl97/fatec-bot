@@ -155,6 +155,9 @@ async def manage_grades_start(update: Update, context: ContextTypes.DEFAULT_TYPE
 def build_grades_list_view(subject, grades):
     """Monta o texto e o teclado da lista de notas de uma matéria."""
     message = dialogs.GRADE_MANAGE_LIST_HEADER.format(subject_name=subject.name)
+    average = grade_service.get_average(grades)
+    if average is not None:
+        message += dialogs.GRADE_MANAGE_AVERAGE_LINE.format(average=f"{average:.2f}")
     message += "".join(f" • <b>{g.name}:</b> {g.value:.2f}\n" for g in grades)
     keyboard = [
         [InlineKeyboardButton(f"Editar / Excluir: {g.name}", callback_data=f"select_grade_{g.id}")]

@@ -14,16 +14,42 @@ logger = logging.getLogger(__name__)
 
 
 
-def create_subject(db: Session, user: User, name: str, professor: str, day: str, room: str, start_time: time, end_time: time, semestre: int) -> Subject:
+def create_subject(db: Session, user: User, name: str, professor: str, day: str, room: str, start_time: time, end_time: time, semestre: int, total_classes: int | None = None) -> Subject:
     """Cria uma nova matéria, agora com semestre."""
     db_subject = Subject(
         name=name, professor=professor, day_of_week=day, room=room,
-        start_time=start_time, end_time=end_time, semestre=semestre, owner=user
+        start_time=start_time, end_time=end_time, semestre=semestre,
+        total_classes=total_classes, owner=user
     )
     db.add(db_subject)
     db.commit()
     db.refresh(db_subject)
     return db_subject
+
+
+# Frequência mínima exigida (comum na maioria das instituições brasileiras: 75%)
+MINIMUM_ATTENDANCE_PERCENT = 75
+
+
+def get_attendance_info(subject: Subject) -> dict | None:
+    """
+    Calcula a frequência de uma matéria a partir de total_classes e total_absences.
+    Retorna None se o usuário ainda não informou o total de aulas previstas.
+    """
+    if not subject.total_classes or subject.total_classes <= 0:
+        return None
+
+    max_absences_allowed = int(subject.total_classes * (1 - MINIMUM_ATTENDANCE_PERCENT / 100))
+    attended = max(subject.total_classes - subject.total_absences, 0)
+    percent = (attended / subject.total_classes) * 100
+    remaining_allowed = max_absences_allowed - subject.total_absences
+
+    return {
+        "percent": percent,
+        "remaining_allowed": remaining_allowed,
+        "at_risk": 0 <= remaining_allowed <= 2,
+        "failed": remaining_allowed < 0,
+    }
 
 def get_subjects_by_user(db: Session, user: User) -> List[Subject]:
     """Retorna matérias de um usuário, ordenadas por dia e horário de início."""

@@ -26,7 +26,7 @@ from bot.core.conversation_timeout import CONVERSATION_TIMEOUT_SECONDS, notify_c
 logger = logging.getLogger(__name__)
 
 # Estados para CRIAÇÃO
-NAME, PROFESSOR, DAY, ROOM, START_TIME, END_TIME, SEMESTER = range(7)
+NAME, PROFESSOR, DAY, ROOM, START_TIME, END_TIME, SEMESTER, TOTAL_CLASSES = range(8)
 # Estados para GERENCIAMENTO
 SELECTING_ACTION, CONFIRMING_DELETE, SHOWING_EDIT_OPTIONS, AWAITING_NEW_VALUE = range(10, 14)
 # Estado para RELATÓRIO
@@ -93,6 +93,21 @@ async def received_semester(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         await update.message.reply_text(dialogs.ERROR_INVALID_SEMESTER)
         return SEMESTER
 
+    await update.message.reply_html(dialogs.SUBJECT_CREATE_ASK_TOTAL_CLASSES)
+    return TOTAL_CLASSES
+
+async def received_total_classes(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    text = update.message.text.strip().lower()
+    total_classes = None
+    if text not in ['pular', 'não', 'nao', 'n']:
+        try:
+            total_classes = int(text)
+            if total_classes <= 0:
+                raise ValueError
+        except ValueError:
+            await update.message.reply_text(dialogs.ERROR_INVALID_NUMBER_POSITIVE)
+            return TOTAL_CLASSES
+
     data = context.user_data
     telegram_user = update.effective_user
     with SessionLocal() as db:
@@ -102,7 +117,7 @@ async def received_semester(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         subject_service.create_subject(
             db=db, user=user, name=data["subject_name"], professor=data["professor_name"],
             day=data["day_of_week"], room=data["room"], start_time=data["start_time"],
-            end_time=data["end_time"], semestre=data["semestre"],
+            end_time=data["end_time"], semestre=data["semestre"], total_classes=total_classes,
         )
     await update.message.reply_html(dialogs.SUBJECT_CREATE_SUCCESS.format(subject_name=data["subject_name"]))
     context.user_data.clear()
@@ -226,6 +241,37 @@ async def select_action_callback(update: Update, context: ContextTypes.DEFAULT_T
     await query.edit_message_text(dialogs.SUBJECT_MANAGE_ACTION_PROMPT.format(subject_name=subject.name), reply_markup=reply_markup, parse_mode='HTML')
     return SELECTING_ACTION
 
+def build_subject_edit_view(subject):
+    """Monta o texto e o teclado do menu de edição de uma matéria."""
+    start_str = subject.start_time.strftime('%H:%M') if subject.start_time else 'N/A'
+    end_str = subject.end_time.strftime('%H:%M') if subject.end_time else 'N/A'
+
+    text = dialogs.SUBJECT_EDIT_HEADER.format(
+        subject_name=subject.name, professor=subject.professor,
+        day_of_week=subject.day_of_week, start_str=start_str, end_str=end_str,
+        room=subject.room, semestre=(subject.semestre or 'N/A'),
+        total_classes=(subject.total_classes or 'N/A'),
+    )
+    # A sua implementação pessoal de edição de horários e formatação irá aqui!
+    # Por enquanto, vou omitir os botões de horário para não causar erros.
+    keyboard = [
+        [
+            InlineKeyboardButton("Nome", callback_data="editfield_name"),
+            InlineKeyboardButton("Professor", callback_data="editfield_professor"),
+        ],
+        [
+            InlineKeyboardButton("Dia da Semana", callback_data="editfield_day_of_week"),
+            InlineKeyboardButton("Sala", callback_data="editfield_room"),
+        ],
+        [
+            InlineKeyboardButton("Semestre", callback_data="editfield_semestre"),
+            InlineKeyboardButton("Total de Aulas", callback_data="editfield_total_classes"),
+        ],
+        [InlineKeyboardButton("« Voltar", callback_data=f"manage_{subject.id}")]
+    ]
+    return text, InlineKeyboardMarkup(keyboard)
+
+
 async def show_edit_options_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     query = update.callback_query
     await query.answer()
@@ -241,32 +287,10 @@ async def show_edit_options_callback(update: Update, context: ContextTypes.DEFAU
     if not subject:
         await query.edit_message_text(dialogs.ERROR_NOT_FOUND)
         return ConversationHandler.END
-    
-    start_str = subject.start_time.strftime('%H:%M') if subject.start_time else 'N/A'
-    end_str = subject.end_time.strftime('%H:%M') if subject.end_time else 'N/A'
-    
-    text = dialogs.SUBJECT_EDIT_HEADER.format(
-        subject_name=subject.name, professor=subject.professor,
-        day_of_week=subject.day_of_week, start_str=start_str, end_str=end_str,
-        room=subject.room, semestre=(subject.semestre or 'N/A')
-    )
-    # A sua implementação pessoal de edição de horários e formatação irá aqui!
-    # Por enquanto, vou omitir os botões de horário para não causar erros.
-    keyboard = [
-        [
-            InlineKeyboardButton("Nome", callback_data="editfield_name"),
-            InlineKeyboardButton("Professor", callback_data="editfield_professor"),
-        ],
-        [
-            InlineKeyboardButton("Dia da Semana", callback_data="editfield_day_of_week"),
-            InlineKeyboardButton("Sala", callback_data="editfield_room"),
-            InlineKeyboardButton("Semestre", callback_data="editfield_semestre"),
-        ],
-        [InlineKeyboardButton("« Voltar", callback_data=f"manage_{subject_id}")]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    text, reply_markup = build_subject_edit_view(subject)
     await query.edit_message_text(text, reply_markup=reply_markup, parse_mode='HTML')
-    
+
     return SHOWING_EDIT_OPTIONS
 
 async def select_field_to_edit_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -280,7 +304,7 @@ async def select_field_to_edit_callback(update: Update, context: ContextTypes.DE
     field_map = {
         'name': 'nome', 'professor': 'nome do professor', 'room': 'sala',
         'start_time': 'horário de início (HH:MM)', 'end_time': 'horário de término (HH:MM)',
-        'semestre': 'semestre'
+        'semestre': 'semestre', 'total_classes': 'total de aulas'
     }
 
     # Agora, com o field_to_edit correto ('day_of_week'), este bloco será executado
@@ -288,6 +312,8 @@ async def select_field_to_edit_callback(update: Update, context: ContextTypes.DE
         keyboard = [["Segunda", "Terça", "Quarta"], ["Quinta", "Sexta", "Sábado"]]
         reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
         await query.message.reply_text(dialogs.SUBJECT_EDIT_DAY_KEYBOARD, reply_markup=reply_markup)
+    elif field_to_edit == "total_classes":
+        await query.message.reply_html(dialogs.SUBJECT_EDIT_ASK_TOTAL_CLASSES)
     else:
         await query.message.reply_html(dialogs.SUBJECT_EDIT_ASK_NEW_VALUE.format(field_name=field_map[field_to_edit]))
 
@@ -303,8 +329,18 @@ async def receive_field_update(update: Update, context: ContextTypes.DEFAULT_TYP
             new_value = datetime.strptime(new_value, "%H:%M").time()
         elif field_to_edit == 'semestre':
             new_value = int(new_value)
+        elif field_to_edit == 'total_classes':
+            if new_value.strip().lower() in ['remover', 'limpar', 'pular']:
+                new_value = None
+            else:
+                new_value = int(new_value)
     except ValueError:
-        error_message = dialogs.ERROR_INVALID_TIME if 'time' in field_to_edit else dialogs.ERROR_INVALID_SEMESTER
+        if 'time' in field_to_edit:
+            error_message = dialogs.ERROR_INVALID_TIME
+        elif field_to_edit == 'semestre':
+            error_message = dialogs.ERROR_INVALID_SEMESTER
+        else:
+            error_message = dialogs.ERROR_INVALID_NUMBER_POSITIVE
         await update.message.reply_html(error_message)
         return AWAITING_NEW_VALUE
 
@@ -317,33 +353,9 @@ async def receive_field_update(update: Update, context: ContextTypes.DEFAULT_TYP
 
     # --- LÓGICA DE RECARREGAMENTO (SEM 'fake_update') ---
     # Simplesmente recria e reenvia o menu de edição
-    
-    start_str = subject.start_time.strftime('%H:%M') if subject.start_time else 'N/A'
-    end_str = subject.end_time.strftime('%H:%M') if subject.end_time else 'N/A'
-    
-    text = dialogs.SUBJECT_EDIT_HEADER.format(
-        subject_name=subject.name, professor=subject.professor,
-        day_of_week=subject.day_of_week, start_str=start_str, end_str=end_str,
-        room=subject.room, semestre=(subject.semestre or 'N/A')
-    )
-    keyboard = [
-        [
-            InlineKeyboardButton("Nome", callback_data="editfield_name"),
-            InlineKeyboardButton("Professor", callback_data="editfield_professor"),
-        ],
-        # Adicione os botões de horário aqui quando implementar a sua parte
-        [
-            InlineKeyboardButton("Dia da Semana", callback_data="editfield_day_of_week"),
-            InlineKeyboardButton("Sala", callback_data="editfield_room"),
-            InlineKeyboardButton("Semestre", callback_data="editfield_semestre"),
-        ],
-        [InlineKeyboardButton("« Voltar", callback_data=f"manage_{subject_id}")]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    # Envia o menu de edição atualizado como uma nova mensagem
+    text, reply_markup = build_subject_edit_view(subject)
     await update.message.reply_text(text, reply_markup=reply_markup, parse_mode='HTML')
-    
+
     return SHOWING_EDIT_OPTIONS
 async def handle_delete_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     query = update.callback_query
@@ -429,6 +441,12 @@ async def show_report(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
         day_of_week=subject.day_of_week, start_str=start_str, end_str=end_str,
         room=subject.room, total_absences=subject.total_absences
     )
+    attendance = subject_service.get_attendance_info(subject)
+    if attendance:
+        report_text += dialogs.ATTENDANCE_LINE.format(
+            percent=attendance["percent"],
+            status=dialogs.format_attendance_status(attendance),
+        )
     report_text += "\n" + dialogs.SEPARATOR + "\n"
 
     report_text += dialogs.REPORT_ACTIVITIES_HEADER
@@ -445,6 +463,8 @@ async def show_report(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     else:
         for grade in grades:
             report_text += dialogs.REPORT_GRADE_ITEM.format(grade_name=grade.name, grade_value=f"{grade.value:.2f}")
+        average = grade_service.get_average(grades)
+        report_text += dialogs.REPORT_GRADE_AVERAGE.format(average=f"{average:.2f}")
 
     await query.edit_message_text(report_text, parse_mode='HTML')
     return ConversationHandler.END
@@ -468,6 +488,7 @@ def setup_subject_handler() -> ConversationHandler:
             START_TIME: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_start_time)],
             END_TIME: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_end_time)],
             SEMESTER: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_semester)],
+            TOTAL_CLASSES: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_total_classes)],
             ConversationHandler.TIMEOUT: [TypeHandler(Update, notify_conversation_timeout)],
         },
         fallbacks=[CommandHandler("cancelar", cancel)],

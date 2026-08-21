@@ -105,6 +105,10 @@ SUBJECT_CREATE_ASK_ROOM = "Dia definido. Qual a sala ou laboratório?"
 SUBJECT_CREATE_ASK_START_TIME = "Sala anotada. Qual o horário de <b>início</b> da aula? (formato HH:MM, ex: 19:00)"
 SUBJECT_CREATE_ASK_END_TIME = "Horário de início salvo. E qual o horário de <b>término</b>? (formato HH:MM, ex: 22:30)"
 SUBJECT_CREATE_ASK_SEMESTER = "Horários salvos. Em qual semestre você está cursando esta matéria? (ex: 1, 2, 3...)"
+SUBJECT_CREATE_ASK_TOTAL_CLASSES = (
+    "Quase lá! Para eu calcular sua frequência, quantas aulas dessa matéria estão previstas no semestre?\n\n"
+    "Envie o número, ou 'pular' se não quiser informar agora (dá pra definir depois em /gerenciarmaterias)."
+)
 SUBJECT_CREATE_SUCCESS = "✅ Matéria '<b>{subject_name}</b>' cadastrada com sucesso!"
 
 SUBJECT_LIST_HEADER = "📅 <b>Sua Grade Horária Semanal:</b>\n\n"
@@ -125,8 +129,9 @@ SUBJECT_LIST_ABSENCES_PREFIX = "      <b>Faltas:</b> {absences}\n"
 SUBJECT_MANAGE_PROMPT = "Escolha uma matéria para gerenciar:"
 SUBJECT_MANAGE_NO_SUBJECTS = "Você não tem matérias para gerenciar. Use /addmateria para adicionar uma."
 SUBJECT_MANAGE_ACTION_PROMPT = "Gerenciando a matéria: <b>{subject_name}</b>\nO que você deseja fazer?"
-SUBJECT_EDIT_HEADER = "📝 <b>Editando: {subject_name}</b>\n\n▪️ <b>Professor:</b> {professor}\n▪️ <b>Horário:</b> {day_of_week}, das {start_str} às {end_str}\n▪️ <b>Sala:</b> {room}\n▪️ <b>Semestre:</b> {semestre}\n\nSelecione o campo que deseja alterar:"
+SUBJECT_EDIT_HEADER = "📝 <b>Editando: {subject_name}</b>\n\n▪️ <b>Professor:</b> {professor}\n▪️ <b>Horário:</b> {day_of_week}, das {start_str} às {end_str}\n▪️ <b>Sala:</b> {room}\n▪️ <b>Semestre:</b> {semestre}\n▪️ <b>Total de Aulas:</b> {total_classes}\n\nSelecione o campo que deseja alterar:"
 SUBJECT_EDIT_ASK_NEW_VALUE = "Por favor, envie o novo valor para <b>{field_name}</b>:"
+SUBJECT_EDIT_ASK_TOTAL_CLASSES = "Quantas aulas dessa matéria estão previstas no semestre? Envie o número, ou 'remover' para apagar essa informação."
 SUBJECT_EDIT_DAY_KEYBOARD = "Por favor, escolha o novo dia da semana:"
 SUBJECT_EDIT_SUCCESS = "✅ Campo atualizado com sucesso!"
 SUBJECT_DELETE_CONFIRM = "⚠️ <b>ATENÇÃO:</b>\nTem certeza que deseja excluir a matéria <b>{subject_name}</b>? Esta ação não pode ser desfeita e apagará todas as atividades, faltas e notas associadas."
@@ -144,6 +149,22 @@ REPORT_ACTIVITY_ITEM = "   • {due_date}: {activity_name}\n"
 REPORT_GRADES_HEADER = "🎓 <b>Notas Lançadas:</b>\n"
 REPORT_NO_GRADES = "   - Nenhuma nota lançada.\n"
 REPORT_GRADE_ITEM = "   • {grade_name}: <b>{grade_value}</b>\n"
+REPORT_GRADE_AVERAGE = "\n   📊 <b>Média:</b> {average}\n"
+
+# --- Frequência (compartilhado entre /faltas e /relatorio) ---
+ATTENDANCE_LINE = "   📊 <b>Frequência:</b> {percent:.1f}% — {status}\n"
+ATTENDANCE_STATUS_FAILED = "reprovado(a) por falta ❌"
+ATTENDANCE_STATUS_AT_RISK = "⚠️ atenção, só pode faltar mais {remaining} aula(s)"
+ATTENDANCE_STATUS_OK = "pode faltar mais {remaining} aula(s)"
+
+
+def format_attendance_status(attendance: dict) -> str:
+    """Formata a parte textual da linha de frequência a partir do dict de subject_service.get_attendance_info."""
+    if attendance["failed"]:
+        return ATTENDANCE_STATUS_FAILED
+    if attendance["at_risk"]:
+        return ATTENDANCE_STATUS_AT_RISK.format(remaining=max(attendance["remaining_allowed"], 0))
+    return ATTENDANCE_STATUS_OK.format(remaining=attendance["remaining_allowed"])
 
 
 # =============================================================================
@@ -216,6 +237,7 @@ GRADE_MANAGE_NO_SUBJECTS = "Você não tem matérias para gerenciar notas."
 GRADE_MANAGE_ASK_SUBJECT = "Escolha uma matéria para ver as notas lançadas:"
 GRADE_MANAGE_NO_GRADES = "Nenhuma nota lançada para <b>{subject_name}</b>."
 GRADE_MANAGE_LIST_HEADER = "Notas lançadas para <b>{subject_name}</b>:\n\n"
+GRADE_MANAGE_AVERAGE_LINE = "📊 <b>Média atual:</b> {average}\n\n"
 GRADE_MANAGE_ACTION_PROMPT = "O que deseja fazer com esta nota?"
 GRADE_MANAGE_DELETE_CONFIRM = "Tem certeza que deseja excluir esta nota? Esta ação não pode ser desfeita."
 GRADE_EDIT_ASK_NAME = "Qual o novo nome para esta avaliação? (Ex: P1, Trabalho Final)"

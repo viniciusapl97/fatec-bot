@@ -30,6 +30,12 @@ def get_grades_by_user(db: Session, user: User) -> List[Grade]:
     """Retorna uma lista de todas as notas de um usuário."""
     return db.query(Grade).filter(Grade.user_id == user.user_id).all()
 
+def get_average(grades: List[Grade]) -> Decimal | None:
+    """Calcula a média aritmética simples das notas informadas. Retorna None se a lista estiver vazia."""
+    if not grades:
+        return None
+    return sum((g.value for g in grades), Decimal(0)) / len(grades)
+
 def get_grade_by_id(db: Session, grade_id: int) -> Grade | None:
     """Busca uma nota pelo seu ID primário."""
     return db.query(Grade).filter(Grade.id == grade_id).first()

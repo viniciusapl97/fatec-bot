@@ -178,6 +178,12 @@ async def report_absences(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     message = dialogs.ABSENCE_REPORT_HEADER
     for subject in subjects:
         message += dialogs.ABSENCE_REPORT_ITEM.format(subject_name=subject.name, total_absences=subject.total_absences)
+        attendance = subject_service.get_attendance_info(subject)
+        if attendance:
+            message += dialogs.ATTENDANCE_LINE.format(
+                percent=attendance["percent"],
+                status=dialogs.format_attendance_status(attendance),
+            )
 
     if query:
         await query.edit_message_text(message, parse_mode='HTML')
