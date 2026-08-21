@@ -21,6 +21,11 @@ def get_pending_reminders(db: Session) -> List[Reminder]:
     return db.query(Reminder).all()
 
 
+def get_pending_reminders_by_user(db: Session, user: User) -> List[Reminder]:
+    """Retorna os lembretes pendentes de um usuário específico."""
+    return db.query(Reminder).filter(Reminder.user_id == user.user_id).all()
+
+
 def delete_reminder_by_id(db: Session, reminder_id: int) -> bool:
     """Remove um lembrete (usado assim que ele é entregue ao usuário)."""
     db_reminder = db.query(Reminder).filter(Reminder.id == reminder_id).first()

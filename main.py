@@ -24,6 +24,7 @@ from bot.handlers.activity_handler import list_activities, setup_activity_handle
 from bot.handlers.absence_handler import setup_absence_handler, setup_absence_management_handler, report_absences
 from bot.handlers.grade_handler import setup_grade_handler, setup_grade_management_handler
 from bot.handlers.import_handler import setup_import_handler
+from bot.handlers.export_handler import export_data
 from bot.handlers.bug_report_handler import setup_bug_report_handler
 from bot.handlers.fatec_handler import setup_fatec_handler
 from bot.handlers.user_settings_handler import setup_delete_user_handler
@@ -67,6 +68,7 @@ async def post_init_configuration(application: Application) -> None:
         BotCommand("broadcast", "(Admin) Envia uma mensagem para todos os usuários"),
         BotCommand("enviar", "(Admin) Envia mensagem para um usuário"),
         BotCommand("lembrar", "Cria um lembrete personalizado"),
+        BotCommand("exportar", "Baixa uma cópia de todos os seus dados em JSON"),
     ]
     await application.bot.set_my_commands(commands)
 
@@ -125,7 +127,8 @@ def main() -> None:
     application.add_handler(CommandHandler("grade", list_subjects))
     application.add_handler(CommandHandler("calendario", list_activities))
     application.add_handler(CommandHandler("faltas", report_absences))
-    
+    application.add_handler(CommandHandler("exportar", export_data))
+
     # --- Registra os Handlers de Conversa ---
     application.add_handler(setup_subject_handler())
     application.add_handler(setup_management_handler())

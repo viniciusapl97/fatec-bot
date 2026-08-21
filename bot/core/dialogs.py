@@ -80,6 +80,7 @@ HELP_TEXT = (
     "• /help - Mostra esta mensagem de ajuda.\n"
     "• /bug - Reportar um problema para o desenvolvedor.\n"
     "• /import - (Avançado) Cadastra matérias em massa a partir de um arquivo JSON.\n"
+    "• /exportar - Baixa uma cópia de todos os seus dados em JSON.\n"
     "• /deletardados - Apaga todos os seus dados do bot.\n"
     "• /privacidade - Mostra a política de privacidade.\n"
     "• /cancelar - <b>(Importante!)</b> Interrompe qualquer operação."
@@ -269,6 +270,12 @@ IMPORT_FAILURE = (
     "Por favor, corrija os seguintes problemas no seu arquivo e envie novamente:\n"
     "{error_list}"
 )
+
+# =============================================================================
+# EXPORTAÇÃO (/exportar)
+# =============================================================================
+EXPORT_GENERATING = "Gerando o arquivo com todos os seus dados, um momento..."
+EXPORT_SUCCESS = "✅ Aqui está uma cópia de todos os seus dados. Guarde em um lugar seguro!"
 
 
 
