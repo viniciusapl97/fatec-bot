@@ -87,6 +87,30 @@ HELP_TEXT = (
 )
 
 # =============================================================================
+# POLÍTICA DE PRIVACIDADE (/privacidade)
+# =============================================================================
+# Texto informativo, não uma política jurídica formal. Se o bot mudar o que
+# coleta, compartilha ou como usa os dados, atualize este texto junto.
+PRIVACY_POLICY_TEXT = (
+    "🔒 <b>Política de Privacidade do Jovis</b>\n\n"
+    "<b>Quais dados eu guardo:</b>\n"
+    "• Do Telegram: seu ID numérico, nome e @username.\n"
+    "• O que você mesmo cadastra: matérias, horários, atividades, faltas, notas e lembretes.\n\n"
+    "<b>Para que uso esses dados:</b>\n"
+    "Só para o bot funcionar — mostrar sua grade, calcular frequência e média, e te avisar de prazos. "
+    "Não vendo, não uso para publicidade e não compartilho com terceiros para fins comerciais.\n\n"
+    "<b>Uma exceção:</b>\n"
+    "Se você usar o /bug para reportar um problema, o print e a descrição que você envia (junto com seu "
+    "nome, @username e ID) vão por e-mail para o desenvolvedor, só para investigar o bug.\n\n"
+    "<b>Quem tem acesso:</b>\n"
+    "Só o desenvolvedor do bot, como administrador do sistema.\n\n"
+    "<b>Seus dados, suas regras:</b>\n"
+    "• /exportar - baixa uma cópia de tudo que você tem cadastrado.\n"
+    "• /deletardados - apaga permanentemente todos os seus dados. Não tem volta.\n\n"
+    "Dúvidas? Manda um /bug contando o que você quer saber."
+)
+
+# =============================================================================
 # ERROS DE VALIDAÇÃO
 # =============================================================================
 ERROR_INVALID_TIME = "Formato de hora inválido. 😓 Tente novamente: <b>HH:MM</b>."

@@ -222,3 +222,13 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         await query.edit_message_text(dialogs.HELP_TEXT, parse_mode="HTML")
     else:
         await update.message.reply_html(dialogs.HELP_TEXT)
+
+
+async def privacy_policy(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Mostra a política de privacidade do bot."""
+    query = update.callback_query
+    if query:
+        await query.answer()
+        await query.edit_message_text(dialogs.PRIVACY_POLICY_TEXT, parse_mode="HTML")
+    else:
+        await update.message.reply_html(dialogs.PRIVACY_POLICY_TEXT)

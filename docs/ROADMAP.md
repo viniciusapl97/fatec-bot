@@ -40,13 +40,15 @@ Depois da correção dos bugs, implementado nesta ordem:
    de cancelar cada um; ao cancelar, remove tanto o registro no banco
    quanto o job agendado em memória (`job_queue.get_jobs_by_name` +
    `schedule_removal()`), senão o lembrete dispararia mesmo cancelado.
+9. `/privacidade` — implementado de verdade (antes só era citado no
+   `/help`, sem handler). Texto em `dialogs.PRIVACY_POLICY_TEXT`,
+   informativo, não é uma política jurídica formal — revisar/atualizar se
+   o que o bot coleta ou compartilha mudar.
 
 Ver `git log` para o histórico completo de commits de cada item.
 
 ## 🐛 Bugs/gaps conhecidos, ainda não corrigidos
 
-- **`/privacidade` fantasma.** `bot/core/dialogs.py` (`HELP_TEXT`) anuncia
-  `/privacidade` mas não existe handler nenhum pra esse comando.
 - **Edição de horário de matéria desabilitada.** `subject_handler.py` tem
   um comentário do dev original admitindo que os botões de editar
   `start_time`/`end_time` foram deixados de fora do menu de

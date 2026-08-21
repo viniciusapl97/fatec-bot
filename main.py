@@ -17,7 +17,7 @@ from bot.db import models
 from bot.services import reminder_service
 
 # Importa todas as funções e setups de handlers
-from bot.handlers.common import start, help_command, button_handler, today_command, week_command
+from bot.handlers.common import start, help_command, privacy_policy, button_handler, today_command, week_command
 from bot.handlers.reminder_handler import setup_reminder_handler, setup_reminder_list_handler, schedule_reminder
 from bot.handlers.subject_handler import list_subjects, setup_subject_handler, setup_management_handler, setup_report_handler
 from bot.handlers.activity_handler import list_activities, setup_activity_handler, setup_activity_management_handler
@@ -70,6 +70,7 @@ async def post_init_configuration(application: Application) -> None:
         BotCommand("lembrar", "Cria um lembrete personalizado"),
         BotCommand("meuslembretes", "Lista e permite cancelar seus lembretes pendentes"),
         BotCommand("exportar", "Baixa uma cópia de todos os seus dados em JSON"),
+        BotCommand("privacidade", "Mostra a política de privacidade"),
     ]
     await application.bot.set_my_commands(commands)
 
@@ -129,6 +130,7 @@ def main() -> None:
     application.add_handler(CommandHandler("calendario", list_activities))
     application.add_handler(CommandHandler("faltas", report_absences))
     application.add_handler(CommandHandler("exportar", export_data))
+    application.add_handler(CommandHandler("privacidade", privacy_policy))
 
     # --- Registra os Handlers de Conversa ---
     application.add_handler(setup_subject_handler())
