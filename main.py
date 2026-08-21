@@ -12,8 +12,7 @@ from telegram.ext import (
 from datetime import time, timedelta
 
 from bot.core.settings import TELEGRAM_TOKEN, TIMEZONE
-from bot.db.base import Base, engine, SessionLocal
-from bot.db import models
+from bot.db.base import SessionLocal
 from bot.services import reminder_service
 
 # Importa todas as funções e setups de handlers
@@ -102,9 +101,9 @@ def reschedule_pending_reminders(application: Application) -> None:
 def main() -> None:
     """Inicia o bot e o mantém rodando."""
 
-    logger.info("Criando/Verificando tabelas no banco de dados...")
-    Base.metadata.create_all(bind=engine)
-    logger.info("Tabelas verificadas/criadas com sucesso.")
+    # O schema do banco agora é gerenciado pelo Alembic (ver migrations/),
+    # não mais criado automaticamente aqui. Rode "alembic upgrade head"
+    # antes de iniciar o bot (veja o README).
 
     defaults = Defaults(tzinfo=TIMEZONE)
     application = (

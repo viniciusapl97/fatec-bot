@@ -2,15 +2,15 @@
 
 import json
 from datetime import datetime
-from bot.db.base import SessionLocal, engine
-from bot.db.models import CourseSubject, Base
+from bot.db.base import SessionLocal
+from bot.db.models import CourseSubject
 
 def seed_database():
     """
     Lê o arquivo JSON e popula a tabela de matérias do curso usando uma
     estratégia de 'update ou insert' (upsert) para manter os dados existentes.
+    Pressupõe que as tabelas já existem (rode "alembic upgrade head" antes).
     """
-    Base.metadata.create_all(bind=engine)
     db = SessionLocal()
 
     print("Lendo o arquivo courses.json...")

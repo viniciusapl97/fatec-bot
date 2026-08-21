@@ -9,11 +9,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 pip install -r requirements.txt          # runtime deps only
 pip install -r requirements-dev.txt      # runtime deps + pytest, for local dev
 
+# Create/update the schema (Alembic — see "Migrations" below). Required before
+# first run and after pulling any migration that isn't applied yet.
+alembic upgrade head
+
 # Run the bot (needs a .env — see "Configuration" below)
-python main.py                           # creates/verifies tables via Base.metadata.create_all() on startup, no migrations
+python main.py
 
 # Seed the Fatec course catalog (data/courses.json -> course_subjects table)
-# Needed for the /fatec onboarding flow to have anything to offer.
+# Needed for the /fatec onboarding flow to have anything to offer. Assumes
+# tables already exist (run migrations first).
 python seed_db.py
 
 # Tests (SQLite in-memory, no Postgres/Telegram token needed — see tests/conftest.py)
@@ -60,8 +65,20 @@ Every multi-step flow (`/addmateria`, `/faltei`, `/lembrar`, `/fatec`, etc.) is 
 - **`CourseSubject` vs `Subject`**: `CourseSubject` is a shared, global catalog table (course/shift/semester → subject template) populated by `seed_db.py` from `data/courses.json`, used only by the `/fatec` onboarding (`fatec_handler.py` + `course_service.py`) to bulk-create a specific student's real, per-user `Subject` rows via `subject_service.bulk_create_from_course_subjects`. Don't confuse the two.
 - **Admin commands** (`/broadcast`, `/enviar`) are gated by `@admin_only` (`bot/decorators.py`), which checks membership in `ADMIN_USER_IDS`.
 
+### Migrations (Alembic)
+
+Schema changes go through Alembic (`migrations/`), not `Base.metadata.create_all()` — `main.py` no longer calls it. `migrations/env.py` imports `bot.db.base.Base` + `bot.db.models` and sets `sqlalchemy.url` from `bot.core.settings.DATABASE_URL` at runtime (nothing hardcoded in `alembic.ini`), so it always uses the same env vars as the app itself.
+
+- After changing a model in `bot/db/models.py`: `alembic revision --autogenerate -m "..."`, review the generated file in `migrations/versions/` (autogenerate misses some things — renames look like drop+add, server-side defaults, etc.), then `alembic upgrade head`.
+- Adopting Alembic on a database that already has the tables (created before this existed, via the old `create_all()`): run `alembic stamp head` once instead of `upgrade head` — it marks the DB as current without re-running `CREATE TABLE` on tables that already exist. Confirmed working end-to-end against a real Postgres container (autogenerate → upgrade → `alembic check` reports no drift → downgrade to base cleanly → simulate a pre-Alembic DB via `create_all()` → `stamp head` leaves data untouched and `alembic check` still reports no drift).
+- `seed_db.py` no longer calls `create_all()` either — it assumes migrations have already been run.
+
 ### Testing gotchas
 
 - `bot/db/base.py`'s exact `create_engine(DATABASE_URL, pool_pre_ping=True)` call works fine against `sqlite:///:memory:` for tests — SQLAlchemy auto-selects `SingletonThreadPool` for in-memory SQLite, so state persists across multiple `SessionLocal()` calls within the same thread/test.
 - SQLite does **not** preserve `tzinfo` on `DateTime(timezone=True)` columns (Postgres does, via `TIMESTAMPTZ`); tests touching `Reminder.remind_at` compare with `.replace(tzinfo=None)` on both sides to sidestep this SQLite-only quirk.
-- `requirements.txt` is UTF-16 encoded (looks garbled through `cat`/`grep` in a UTF-8 terminal, but `pip` parses it fine) — likely produced via `pip freeze` on Windows PowerShell. New dev-only dependencies go in `requirements-dev.txt` (UTF-8, `-r requirements.txt` plus the extra package), not into `requirements.txt`.
+- No local Postgres binary in this environment, but `docker run postgres:16-alpine` works and is the way to validate anything migration/Postgres-type-related for real instead of trusting SQLite's looser typing.
+
+### Editor tooling gotcha
+
+- The file-write tool preserves an existing file's on-disk encoding when overwriting it — editing `requirements.txt` (historically UTF-16, likely from `pip freeze` on Windows PowerShell) through it silently re-wrote UTF-16 even with UTF-8 content, which breaks `pip` (`Invalid requirement` with literal `\x00` bytes in the error). It was converted to plain UTF-8 when Alembic was added (git history has both versions if you need to compare). If a similar non-UTF-8 file ever needs an encoding fix, overwrite it via a shell heredoc (`cat > file << 'EOF' ... EOF`) instead of the normal edit path, then verify with `file <path>`.

@@ -136,14 +136,47 @@ Depois da correção dos bugs, implementado nesta ordem:
     atividades, naveguei por todas as páginas geradas conferindo que
     nenhuma jamais ultrapassa 4096 caracteres, e testei os handlers
     completos (comando + callback) ponta a ponta.
+18. Migrations com Alembic (`migrations/`) — substitui
+    `Base.metadata.create_all()`, que foi removido de `main.py` e
+    `seed_db.py`. `migrations/env.py` lê a `DATABASE_URL` de
+    `bot.core.settings` em runtime (nada hardcoded em `alembic.ini`).
+    Gerada a migration baseline (`migrations/versions/6cde7bf58518_*.py`)
+    cobrindo as 7 tabelas atuais. `requirements.txt` ganhou `alembic` e foi
+    convertido de UTF-16 pra UTF-8 nesse processo (ver nota abaixo).
+
+    ⚠️ **Passo único de adoção necessário no banco de dev/produção que já
+    existe** (o que você já está rodando localmente): em vez de
+    `alembic upgrade head`, rode `alembic stamp head` na primeira vez —
+    isso marca o banco como atualizado sem tentar recriar tabelas que já
+    existem. Depois desse passo único, é sempre `alembic upgrade head`
+    normalmente. Resolve de vez os dois `ALTER TABLE` manuais pendentes
+    dos itens 13 e 16 (`notifications_enabled`, `notification_hour`) — a
+    migration baseline já inclui as duas colunas, então `stamp head`
+    também cobre esse débito.
+
+    Validado de ponta a ponta contra um Postgres real (container Docker
+    `postgres:16-alpine`, já removido): `alembic upgrade head` do zero →
+    `alembic check` sem diferença pendente → `alembic downgrade base`
+    limpo → simulei o estado atual do usuário (tabelas via `create_all()`,
+    sem Alembic) → `alembic stamp head` não tocou nos dados e `alembic
+    check` continuou sem diferença → rodei operações reais dos `services/`
+    (criar usuário, matéria, atividade, falta, nota, lembrete, calcular
+    frequência) direto sobre o schema criado pela migration, tudo
+    funcionando. Suíte pytest (88 testes, SQLite) não usa `main.py`/
+    `seed_db.py` diretamente, então não foi afetada.
+
+    **Nota sobre `requirements.txt`**: estava em UTF-16 (provavelmente
+    `pip freeze` no PowerShell do Windows) — ao tentar só adicionar uma
+    linha, a ferramenta de edição preservou a codificação original e
+    quebrou o `pip` (erro "Invalid requirement" com bytes `\x00` literais
+    no meio do nome do pacote). Precisei reescrever o arquivo via shell
+    (heredoc) pra forçar UTF-8. Detalhe registrado no `CLAUDE.md` pra não
+    se repetir.
 
 Ver `git log` para o histórico completo de commits de cada item.
 
 ## 🔭 Mais ambiciosas / longo prazo
 
-- Migrations com Alembic em vez de `Base.metadata.create_all()` — hoje
-  qualquer mudança de coluna depende de mexer manualmente no banco em
-  produção.
 - Testes de handler/integração (fora de escopo da suíte atual de
   propósito — exigem mockar bastante a API do `python-telegram-bot`; os
   `services/` concentram a lógica de negócio testável isoladamente).

@@ -97,11 +97,16 @@ Todos os textos enviados pelo bot estão centralizados em `bot/core/dialogs.py`,
    EMAIL_RECEIVER="seu-email-de-destino@exemplo.com"
    ```
 
-6. **Subir o bot**
+6. **Criar as tabelas (migrations)**
+   ```bash
+   alembic upgrade head
+   ```
+   O schema do banco é versionado com [Alembic](https://alembic.sqlalchemy.org/) (pasta `migrations/`) — não é mais criado automaticamente ao subir o bot. Se você já tinha um banco criado antes disso existir (via `Base.metadata.create_all()`), rode `alembic stamp head` no lugar de `upgrade head` na primeira vez — isso marca o banco como atualizado sem tentar recriar as tabelas que já existem. Depois disso, é sempre `alembic upgrade head`.
+
+7. **Subir o bot**
    ```bash
    python main.py
    ```
-   Na primeira execução, as tabelas são criadas automaticamente.
 
 ### Estrutura de pastas
 ```
@@ -118,7 +123,9 @@ Todos os textos enviados pelo bot estão centralizados em `bot/core/dialogs.py`,
 │   │   └── ...             # subject_handler.py etc.
 │   ├── services/           # Regras de negócio
 │   └── decorators.py       # Ex.: @admin_only
+├── migrations/             # Migrations do banco (Alembic) — ver "Migrations" abaixo
 ├── tests/                  # Testes unitários (pytest) dos services
+├── alembic.ini
 ├── .env                    # NÃO comitar
 ├── .gitignore
 ├── main.py                 # Entrada da aplicação
@@ -126,6 +133,22 @@ Todos os textos enviados pelo bot estão centralizados em `bot/core/dialogs.py`,
 ├── requirements.txt
 └── requirements-dev.txt    # requirements.txt + pytest
 ```
+
+### Migrations (Alembic)
+O schema do banco é versionado em `migrations/versions/` — `bot/db/models.py` continua sendo a fonte da verdade (SQLAlchemy), mas qualquer mudança de coluna/tabela precisa de uma migration pra ser aplicada em qualquer banco (dev, produção etc.):
+```bash
+# depois de mudar um model em bot/db/models.py, gera a migration automaticamente
+alembic revision --autogenerate -m "descreva a mudança"
+
+# revise o arquivo gerado em migrations/versions/ antes de aplicar!
+
+# aplica as migrations pendentes
+alembic upgrade head
+
+# desfaz a última migration, se precisar
+alembic downgrade -1
+```
+`migrations/env.py` já lê a `DATABASE_URL` das mesmas variáveis de ambiente do resto do projeto (via `bot/core/settings.py`) — não precisa configurar nada em `alembic.ini`.
 ### Rodando os testes
 Os testes cobrem a camada de `bot/services/` e usam SQLite em memória, sem precisar de Postgres nem de token do Telegram de verdade:
 ```bash
