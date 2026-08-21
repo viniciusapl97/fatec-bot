@@ -24,7 +24,7 @@ from bot.handlers.activity_handler import list_activities, setup_activity_handle
 from bot.handlers.absence_handler import setup_absence_handler, setup_absence_management_handler, report_absences
 from bot.handlers.grade_handler import setup_grade_handler, setup_grade_management_handler
 from bot.handlers.import_handler import setup_import_handler
-from bot.handlers.export_handler import export_data
+from bot.handlers.export_handler import export_data, export_calendar
 from bot.handlers.bug_report_handler import setup_bug_report_handler
 from bot.handlers.fatec_handler import setup_fatec_handler
 from bot.handlers.user_settings_handler import setup_delete_user_handler, setup_notifications_handler
@@ -70,6 +70,7 @@ async def post_init_configuration(application: Application) -> None:
         BotCommand("lembrar", "Cria um lembrete personalizado"),
         BotCommand("meuslembretes", "Lista e permite cancelar seus lembretes pendentes"),
         BotCommand("exportar", "Baixa uma cópia de todos os seus dados em JSON"),
+        BotCommand("exportarcalendario", "Baixa seus trabalhos e provas em formato .ics"),
         BotCommand("privacidade", "Mostra a política de privacidade"),
         BotCommand("notificacoes", "Ativa ou desativa os avisos automáticos de prazo"),
     ]
@@ -134,6 +135,7 @@ def main() -> None:
     application.add_handler(CommandHandler("calendario", list_activities))
     application.add_handler(CommandHandler("faltas", report_absences))
     application.add_handler(CommandHandler("exportar", export_data))
+    application.add_handler(CommandHandler("exportarcalendario", export_calendar))
     application.add_handler(CommandHandler("privacidade", privacy_policy))
 
     # --- Registra os Handlers de Conversa ---

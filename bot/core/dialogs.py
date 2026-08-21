@@ -87,6 +87,7 @@ HELP_TEXT = (
     "• /bug - Reportar um problema para o desenvolvedor.\n"
     "• /import - (Avançado) Cadastra matérias em massa a partir de um arquivo JSON.\n"
     "• /exportar - Baixa uma cópia de todos os seus dados em JSON.\n"
+    "• /exportarcalendario - Baixa seus trabalhos e provas em formato .ics (Google Agenda, Apple Calendário, Outlook).\n"
     "• /deletardados - Apaga todos os seus dados do bot.\n"
     "• /privacidade - Mostra a política de privacidade.\n"
     "• /cancelar - <b>(Importante!)</b> Interrompe qualquer operação."
@@ -316,6 +317,15 @@ IMPORT_FAILURE = (
 # =============================================================================
 EXPORT_GENERATING = "Gerando o arquivo com todos os seus dados, um momento..."
 EXPORT_SUCCESS = "✅ Aqui está uma cópia de todos os seus dados. Guarde em um lugar seguro!"
+
+# --- Exportação do calendário (/exportarcalendario) ---
+EXPORT_CALENDAR_EMPTY = "Você não tem nenhum trabalho ou prova cadastrado ainda. Use /addtrabalho ou /addprova primeiro."
+EXPORT_CALENDAR_GENERATING = "Gerando seu arquivo de calendário, um momento..."
+EXPORT_CALENDAR_SUCCESS = (
+    "✅ Aqui está seu calendário de trabalhos e provas em formato .ics.\n\n"
+    "Abra o arquivo pelo celular ou computador para importar no Google Agenda, Apple Calendário ou Outlook. "
+    "É um retrato do momento — se você adicionar novos trabalhos/provas depois, gere um novo arquivo com /exportarcalendario."
+)
 
 
 

@@ -79,13 +79,23 @@ Depois da correção dos bugs, implementado nesta ordem:
     "vence em 3 dias" nunca tinham sido entregues de verdade em
     produção. Corrigido trocando a chamada para `user_service.get_upcoming_activities`.
     3 testes novos em `tests/test_user_service.py`.
+14. `/exportarcalendario` — gera um `.ics` (iCalendar/RFC 5545) com os
+    trabalhos e provas do usuário, pra importar no Google Agenda/Apple
+    Calendário/Outlook. É um retrato do momento (snapshot baixável), não
+    uma assinatura ao vivo — o bot não tem servidor HTTP público pra
+    hospedar uma URL de calendário que os apps re-sincronizem sozinhos.
+    Gerado à mão em `export_service.build_activities_ics` (sem dependência
+    nova: escaping e "line folding" do RFC 5545 implementados na unha),
+    validado de verdade parseando o arquivo gerado com a lib `icalendar`
+    (só pra conferência, não é dependência do projeto). **Bug real
+    encontrado e corrigido no processo**: a primeira versão do handler
+    (`export_handler.py:export_calendar`) montava o `.ics` FORA do
+    `with SessionLocal()`, e como isso acessa `activity.subject.name`
+    (lazy load), quebrava com `DetachedInstanceError` assim que a sessão
+    fechava — corrigido movendo a montagem do `.ics` pra dentro do bloco
+    da sessão. 4 testes novos em `tests/test_export_service.py`.
 
 Ver `git log` para o histórico completo de commits de cada item.
-
-## 🧭 Boa experiência de uso (médio prazo)
-
-- Sincronizar provas/trabalhos com o calendário do celular (exportar
-  `.ics`).
 
 ## 🔭 Mais ambiciosas / longo prazo
 
