@@ -232,3 +232,382 @@ def test_subject_grades_average_is_null_when_no_grades(db, user):
     body = response.json()
     assert body["grades"] == []
     assert body["average"] is None
+
+
+# --- POST/PATCH/DELETE /subjects ---------------------------------------------
+
+def test_create_subject_requires_authentication():
+    assert _client().post("/subjects", json={"name": "X", "day_of_week": "Segunda"}).status_code == 403
+
+
+def test_create_subject_success(db, user):
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().post(
+        "/subjects",
+        json={
+            "name": "Cálculo I", "professor": "Prof. X", "day_of_week": "Segunda", "room": "A1",
+            "start_time": "19:00", "end_time": "20:40", "semestre": 1, "total_classes": 40,
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["name"] == "Cálculo I"
+    assert body["total_classes"] == 40
+    assert body["total_absences"] == 0
+
+
+def test_create_subject_rejects_invalid_day_of_week(db, user):
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().post(
+        "/subjects",
+        json={"name": "Cálculo I", "day_of_week": "Domingo"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_subject_rejects_time_conflict(db, user):
+    subject_service.create_subject(
+        db, user, "Cálculo I", "Prof. X", "Segunda", "A1", time(19, 0), time(20, 40), 1
+    )
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().post(
+        "/subjects",
+        json={"name": "Física I", "day_of_week": "Segunda", "start_time": "19:30", "end_time": "21:00"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 409
+
+
+def test_update_subject_returns_404_for_other_users_subject(db, user):
+    other_user, _ = user_service.get_or_create_user(db, 999, "Outro", "outro")
+    other_subject = subject_service.create_subject(db, other_user, "Matéria de outro", "Prof. Z", "Segunda", "C1", None, None, 1)
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().patch(
+        f"/subjects/{other_subject.id}", json={"name": "Hackeado"}, headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == 404
+
+
+def test_update_subject_partial_update(db, user):
+    subject = subject_service.create_subject(db, user, "Cálculo I", "Prof. X", "Segunda", "A1", None, None, 1, total_classes=40)
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().patch(
+        f"/subjects/{subject.id}", json={"room": "B2"}, headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["room"] == "B2"
+    assert body["name"] == "Cálculo I"
+    assert body["total_classes"] == 40
+
+
+def test_update_subject_clears_total_classes_with_explicit_null(db, user):
+    subject = subject_service.create_subject(db, user, "Cálculo I", "Prof. X", "Segunda", "A1", None, None, 1, total_classes=40)
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().patch(
+        f"/subjects/{subject.id}", json={"total_classes": None}, headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == 200
+    assert response.json()["total_classes"] is None
+
+
+def test_update_subject_rejects_time_conflict(db, user):
+    subject_service.create_subject(db, user, "Cálculo I", "Prof. X", "Segunda", "A1", time(19, 0), time(20, 40), 1)
+    other = subject_service.create_subject(db, user, "Física I", "Prof. Y", "Terça", "B1", time(19, 0), time(20, 40), 1)
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().patch(
+        f"/subjects/{other.id}", json={"day_of_week": "Segunda"}, headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == 409
+
+
+def test_delete_subject_success(db, user):
+    subject = subject_service.create_subject(db, user, "Cálculo I", "Prof. X", "Segunda", "A1", None, None, 1)
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().delete(f"/subjects/{subject.id}", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 204
+    assert subject_service.get_subject_by_id(db, subject.id) is None
+
+
+def test_delete_subject_returns_404_for_other_users_subject(db, user):
+    other_user, _ = user_service.get_or_create_user(db, 999, "Outro", "outro")
+    other_subject = subject_service.create_subject(db, other_user, "Matéria de outro", "Prof. Z", "Segunda", "C1", None, None, 1)
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().delete(f"/subjects/{other_subject.id}", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 404
+
+
+# --- POST/PATCH/DELETE /activities --------------------------------------------
+
+def test_create_activity_requires_own_subject(db, user):
+    other_user, _ = user_service.get_or_create_user(db, 999, "Outro", "outro")
+    other_subject = subject_service.create_subject(db, other_user, "Matéria de outro", "Prof. Z", "Segunda", "C1", None, None, 1)
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().post(
+        "/activities",
+        json={"subject_id": other_subject.id, "activity_type": "prova", "name": "P1", "due_date": "2026-09-10"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 404
+
+
+def test_create_activity_success(db, user):
+    subject = subject_service.create_subject(db, user, "Cálculo I", "Prof. X", "Segunda", "A1", None, None, 1)
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().post(
+        "/activities",
+        json={"subject_id": subject.id, "activity_type": "prova", "name": "P1", "due_date": "2026-09-10", "notes": "levar calculadora"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["name"] == "P1"
+    assert body["subject_name"] == "Cálculo I"
+    assert body["notes"] == "levar calculadora"
+
+
+def test_update_activity_returns_404_for_other_users_activity(db, user):
+    other_user, _ = user_service.get_or_create_user(db, 999, "Outro", "outro")
+    other_subject = subject_service.create_subject(db, other_user, "Matéria de outro", "Prof. Z", "Segunda", "C1", None, None, 1)
+    other_activity = activity_service.create_activity(db, other_user, other_subject, "P1", date.today(), None, "prova")
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().patch(
+        f"/activities/{other_activity.id}", json={"name": "Hackeado"}, headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == 404
+
+
+def test_update_activity_can_move_to_own_subject(db, user):
+    subject = subject_service.create_subject(db, user, "Cálculo I", "Prof. X", "Segunda", "A1", None, None, 1)
+    other_subject = subject_service.create_subject(db, user, "Física I", "Prof. Y", "Terça", "B1", None, None, 1)
+    activity = activity_service.create_activity(db, user, subject, "P1", date(2026, 9, 10), None, "prova")
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().patch(
+        f"/activities/{activity.id}", json={"subject_id": other_subject.id}, headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == 200
+    assert response.json()["subject_name"] == "Física I"
+
+
+def test_update_activity_rejects_move_to_other_users_subject(db, user):
+    other_user, _ = user_service.get_or_create_user(db, 999, "Outro", "outro")
+    other_subject = subject_service.create_subject(db, other_user, "Matéria de outro", "Prof. Z", "Segunda", "C1", None, None, 1)
+    subject = subject_service.create_subject(db, user, "Cálculo I", "Prof. X", "Segunda", "A1", None, None, 1)
+    activity = activity_service.create_activity(db, user, subject, "P1", date(2026, 9, 10), None, "prova")
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().patch(
+        f"/activities/{activity.id}", json={"subject_id": other_subject.id}, headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == 404
+
+
+def test_delete_activity_success(db, user):
+    subject = subject_service.create_subject(db, user, "Cálculo I", "Prof. X", "Segunda", "A1", None, None, 1)
+    activity = activity_service.create_activity(db, user, subject, "P1", date.today(), None, "prova")
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().delete(f"/activities/{activity.id}", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 204
+    assert activity_service.get_activity_by_id(db, activity.id) is None
+
+
+# --- POST/PATCH/DELETE /absences ------------------------------------------------
+
+def test_create_absence_requires_own_subject(db, user):
+    other_user, _ = user_service.get_or_create_user(db, 999, "Outro", "outro")
+    other_subject = subject_service.create_subject(db, other_user, "Matéria de outro", "Prof. Z", "Segunda", "C1", None, None, 1)
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().post(
+        "/absences",
+        json={"subject_id": other_subject.id, "absence_date": "2026-08-20", "quantity": 1},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 404
+
+
+def test_create_absence_updates_subject_total(db, user):
+    subject = subject_service.create_subject(db, user, "Cálculo I", "Prof. X", "Segunda", "A1", None, None, 1)
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().post(
+        "/absences",
+        json={"subject_id": subject.id, "absence_date": "2026-08-20", "quantity": 2, "notes": "atestado"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["quantity"] == 2
+    assert body["subject_name"] == "Cálculo I"
+    db.refresh(subject)
+    assert subject.total_absences == 2
+
+
+def test_create_absence_rejects_non_positive_quantity(db, user):
+    subject = subject_service.create_subject(db, user, "Cálculo I", "Prof. X", "Segunda", "A1", None, None, 1)
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().post(
+        "/absences",
+        json={"subject_id": subject.id, "absence_date": "2026-08-20", "quantity": 0},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_absence_adjusts_subject_total(db, user):
+    subject = subject_service.create_subject(db, user, "Cálculo I", "Prof. X", "Segunda", "A1", None, None, 1)
+    absence = absence_service.add_absence(db, user, subject, date.today(), 2, None)
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().patch(
+        f"/absences/{absence.id}", json={"quantity": 5}, headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == 200
+    assert response.json()["quantity"] == 5
+    db.refresh(subject)
+    assert subject.total_absences == 5
+
+
+def test_update_absence_returns_404_for_other_users_absence(db, user):
+    other_user, _ = user_service.get_or_create_user(db, 999, "Outro", "outro")
+    other_subject = subject_service.create_subject(db, other_user, "Matéria de outro", "Prof. Z", "Segunda", "C1", None, None, 1)
+    other_absence = absence_service.add_absence(db, other_user, other_subject, date.today(), 1, None)
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().patch(
+        f"/absences/{other_absence.id}", json={"quantity": 3}, headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == 404
+
+
+def test_delete_absence_adjusts_subject_total(db, user):
+    subject = subject_service.create_subject(db, user, "Cálculo I", "Prof. X", "Segunda", "A1", None, None, 1)
+    absence = absence_service.add_absence(db, user, subject, date.today(), 3, None)
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().delete(f"/absences/{absence.id}", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 204
+    db.refresh(subject)
+    assert subject.total_absences == 0
+
+
+# --- POST/PATCH/DELETE /grades ---------------------------------------------------
+
+def test_create_grade_requires_own_subject(db, user):
+    other_user, _ = user_service.get_or_create_user(db, 999, "Outro", "outro")
+    other_subject = subject_service.create_subject(db, other_user, "Matéria de outro", "Prof. Z", "Segunda", "C1", None, None, 1)
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().post(
+        "/grades",
+        json={"subject_id": other_subject.id, "name": "P1", "value": "7.5"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 404
+
+
+def test_create_grade_success(db, user):
+    subject = subject_service.create_subject(db, user, "Cálculo I", "Prof. X", "Segunda", "A1", None, None, 1)
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().post(
+        "/grades",
+        json={"subject_id": subject.id, "name": "P1", "value": "7.5"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["value"] == "7.50"
+    assert body["subject_name"] == "Cálculo I"
+
+
+def test_create_grade_rejects_negative_value(db, user):
+    subject = subject_service.create_subject(db, user, "Cálculo I", "Prof. X", "Segunda", "A1", None, None, 1)
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().post(
+        "/grades",
+        json={"subject_id": subject.id, "name": "P1", "value": "-1"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_grade_success(db, user):
+    subject = subject_service.create_subject(db, user, "Cálculo I", "Prof. X", "Segunda", "A1", None, None, 1)
+    grade = grade_service.add_grade(db, user, subject, "P1", Decimal("7.5"))
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().patch(
+        f"/grades/{grade.id}", json={"name": "P1 (revisão)", "value": "9.0"}, headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["name"] == "P1 (revisão)"
+    assert body["value"] == "9.00"
+
+
+def test_update_grade_returns_404_for_other_users_grade(db, user):
+    other_user, _ = user_service.get_or_create_user(db, 999, "Outro", "outro")
+    other_subject = subject_service.create_subject(db, other_user, "Matéria de outro", "Prof. Z", "Segunda", "C1", None, None, 1)
+    other_grade = grade_service.add_grade(db, other_user, other_subject, "P1", Decimal("10.0"))
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().patch(
+        f"/grades/{other_grade.id}", json={"name": "Hackeado", "value": "0"}, headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == 404
+
+
+def test_delete_grade_success(db, user):
+    subject = subject_service.create_subject(db, user, "Cálculo I", "Prof. X", "Segunda", "A1", None, None, 1)
+    grade = grade_service.add_grade(db, user, subject, "P1", Decimal("7.5"))
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().delete(f"/grades/{grade.id}", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 204
+    assert grade_service.get_grade_by_id(db, grade.id) is None

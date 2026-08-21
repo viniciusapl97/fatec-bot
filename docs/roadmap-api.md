@@ -41,13 +41,39 @@ Ver [`ROADMAP.md`](ROADMAP.md) para o índice geral entre frentes, e
      retornam 404 (não 403) tanto pra matéria inexistente quanto pra
      matéria de outro usuário, pra não vazar quais IDs existem.
    - 10 testes novos em `tests/test_api.py`.
+4. **Endpoints de escrita** (2026-08-21) — POST/PATCH/DELETE pras 4
+   entidades, paridade completa de CRUD com o bot:
+   - Matérias: `POST /subjects`, `PATCH /subjects/{id}`,
+     `DELETE /subjects/{id}`. Checa conflito de horário no mesmo dia (409),
+     igual `/addmateria`/edição no bot — só quando dia+início+fim
+     resultantes (após o merge do PATCH com o valor atual) estão todos
+     definidos. `PATCH` usa `exclude_unset` do Pydantic pra atualizar só os
+     campos enviados, distinguindo "campo omitido" de "campo enviado como
+     `null`" (usado pra limpar `total_classes`).
+   - Atividades: `POST /activities`, `PATCH /activities/{id}` (inclui
+     mover pra outra matéria via `subject_id`), `DELETE /activities/{id}`.
+     `activity_type` não é editável (mesma regra do bot — é fixado na
+     criação).
+   - Faltas: `POST /absences`, `PATCH /absences/{id}` (só `quantity`,
+     mesma limitação do bot), `DELETE /absences/{id}` — os três
+     recalculam `Subject.total_absences` via `absence_service` (não
+     duplicado no router).
+   - Notas: `POST /grades`, `PATCH /grades/{id}` (nome e valor juntos,
+     mesma assinatura de `grade_service.update_grade`), `DELETE
+     /grades/{id}`.
+   - Todo endpoint que recebe `subject_id` (no corpo ou na URL) valida
+     posse com o novo `api/deps.get_owned_subject` — 404 se a matéria não
+     existir ou for de outro usuário. Movido de `subjects.py` pra
+     `deps.py` porque activities/absences/grades passaram a precisar da
+     mesma checagem.
+   - 49 testes de API no total agora (`tests/test_api.py`), cobrindo
+     autenticação, posse, validação (dia da semana inválido, quantidade
+     ≤0, nota negativa) e conflito de horário.
 
 Ver `git log` para o histórico completo de commits de cada item.
 
 ## 🎯 Próximos passos
 
-- **Endpoints de escrita** (criar/editar/apagar matéria, atividade,
-  falta, nota) — a "paridade completa" do app com o bot depende disso.
 - **Telegram Login Widget** — autenticação pro site (diferente do token
   pessoal usado pelo app), ver
   [`specs/frontend-web-and-app.md`](specs/frontend-web-and-app.md). Só

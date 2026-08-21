@@ -10,8 +10,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from bot.db.base import SessionLocal
-from bot.db.models import User
-from bot.services import access_token_service
+from bot.db.models import Subject, User
+from bot.services import access_token_service, subject_service
 
 bearer_scheme = HTTPBearer(auto_error=True)
 
@@ -41,3 +41,16 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     return user
+
+
+def get_owned_subject(db: Session, subject_id: int, user: User) -> Subject:
+    """
+    Busca uma matéria garantindo que pertence ao usuário do token; 404 (não
+    403) tanto se ela não existir quanto se for de outro usuário, pra não
+    vazar quais IDs existem. Usado por qualquer endpoint que recebe um
+    subject_id (na URL ou no corpo) e precisa validar posse antes de agir.
+    """
+    subject = subject_service.get_subject_by_id(db, subject_id)
+    if not subject or subject.user_id != user.user_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Matéria não encontrada.")
+    return subject
