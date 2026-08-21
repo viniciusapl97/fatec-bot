@@ -8,7 +8,7 @@
 
 from fastapi import FastAPI
 
-from api.routers import me, subjects, activities, absences, grades
+from api.routers import auth, me, subjects, activities, absences, grades
 
 app = FastAPI(
     title="Jovis API",
@@ -16,6 +16,7 @@ app = FastAPI(
     description="API do Jovis — mesmos dados do bot de Telegram, para o site e o app.",
 )
 
+app.include_router(auth.router)
 app.include_router(me.router)
 app.include_router(subjects.router)
 app.include_router(activities.router)

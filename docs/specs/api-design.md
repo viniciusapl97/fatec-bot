@@ -35,6 +35,40 @@ Pra esse segundo caso, implementado um **token de acesso pessoal**:
   `api/deps.get_current_user` faz o hash do token recebido e busca no
   banco (`access_token_service.get_user_by_token`), 401 se não achar.
 
+## Telegram Login Widget (`POST /auth/telegram`) — pro site
+
+Decidido em 2026-08-21, ao implementar. O widget devolve pro frontend um
+payload assinado (`id`, `first_name`, `last_name?`, `username?`,
+`photo_url?`, `auth_date`, `hash`) — ver
+[o algoritmo oficial](https://core.telegram.org/widgets/login#checking-authorization).
+`api/routers/auth.py` reproduz esse algoritmo: monta a
+"data-check-string" (todo campo exceto `hash`, e exceto os que vieram
+`None`, como `chave=valor` ordenado por chave e unido por `\n`), calcula
+`HMAC-SHA256` dela usando `SHA256(TELEGRAM_TOKEN)` como chave, e compara
+com `hmac.compare_digest` (evita timing attack). Também rejeita
+`auth_date` com mais de 24h (`TELEGRAM_AUTH_MAX_AGE_SECONDS`), pra um link
+de login antigo não continuar valendo pra sempre.
+
+**Decisão importante: não é uma autenticação separada.** Em vez de inventar
+sessão/JWT só pro site, o endpoint só valida a assinatura, resolve o
+usuário via `user_service.get_or_create_user` (mesma função que qualquer
+handler do bot já usa) e emite um **token de acesso pessoal comum**
+(`access_token_service.create_access_token` — o mesmo mecanismo do
+`/tokendeacesso` no bot). O site recebe esse token, guarda (ainda a
+decidir onde — ver `roadmap-app.md`) e autentica exatamente como o app já
+faz, via `Authorization: Bearer <token>`. Isso significa que `/me` e todos
+os outros endpoints não sabem nem precisam saber se o token veio do bot ou
+do widget — é o mesmo `AccessToken` na mesma tabela.
+
+Trade-off aceito conscientemente: como `AccessToken` não tem expiração
+nem rotação (só `/revogartokens` no bot apaga todos de uma vez), cada
+login pelo widget cria uma linha nova nessa tabela — não há reaproveitamento
+de token entre logins. Pra um MVP isso é aceitável (não há nada sensível
+além dos próprios dados do usuário, e o dono pode sempre revogar tudo pelo
+bot); se acumular lixo demais, o next step é ou reaproveitar token
+existente por usuário, ou dar expiração a tokens emitidos pelo widget
+especificamente (sem afetar o token pessoal do app).
+
 ## Separação entre `api/schemas.py` e `bot/db/models.py`
 
 Os modelos Pydantic de resposta (`api/schemas.py`) são deliberadamente um

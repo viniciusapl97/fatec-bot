@@ -1,14 +1,34 @@
+import hashlib
+import hmac
+import time as time_module
 from datetime import date, time
 from decimal import Decimal
 
 from fastapi.testclient import TestClient
 
+from bot.core.settings import TELEGRAM_TOKEN
 from bot.services import access_token_service, subject_service, activity_service, absence_service, grade_service, user_service
 from api.main import app
 
 
 def _client() -> TestClient:
     return TestClient(app)
+
+
+def _sign_telegram_payload(**overrides) -> dict:
+    """Monta um payload do Telegram Login Widget assinado com TELEGRAM_TOKEN, do jeito que o Telegram faria de verdade."""
+    payload = {
+        "id": 12345,
+        "first_name": "Ana",
+        "username": "ana_tg",
+        "auth_date": int(time_module.time()),
+    }
+    payload.update(overrides)
+
+    data_check_string = "\n".join(f"{k}={v}" for k, v in sorted(payload.items()))
+    secret_key = hashlib.sha256(TELEGRAM_TOKEN.encode("utf-8")).digest()
+    payload["hash"] = hmac.new(secret_key, data_check_string.encode("utf-8"), hashlib.sha256).hexdigest()
+    return payload
 
 
 def test_health_check_requires_no_auth():
@@ -611,3 +631,58 @@ def test_delete_grade_success(db, user):
 
     assert response.status_code == 204
     assert grade_service.get_grade_by_id(db, grade.id) is None
+
+
+# --- POST /auth/telegram -------------------------------------------------------
+
+def test_telegram_login_creates_user_and_returns_working_token(db):
+    payload = _sign_telegram_payload(id=555, first_name="Beto", username="beto_tg")
+
+    response = _client().post("/auth/telegram", json=payload)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["token_type"] == "bearer"
+    token = body["access_token"]
+
+    me_response = _client().get("/me", headers={"Authorization": f"Bearer {token}"})
+    assert me_response.status_code == 200
+    assert me_response.json()["user_id"] == 555
+    assert me_response.json()["first_name"] == "Beto"
+
+
+def test_telegram_login_reuses_existing_user(db, user):
+    payload = _sign_telegram_payload(id=user.user_id, first_name=user.first_name, username=user.username)
+
+    response = _client().post("/auth/telegram", json=payload)
+
+    assert response.status_code == 200
+    token = response.json()["access_token"]
+    me_response = _client().get("/me", headers={"Authorization": f"Bearer {token}"})
+    assert me_response.json()["user_id"] == user.user_id
+
+
+def test_telegram_login_rejects_tampered_payload():
+    payload = _sign_telegram_payload(id=555, first_name="Beto")
+    payload["first_name"] = "Invasor"  # muda o payload sem re-assinar
+
+    response = _client().post("/auth/telegram", json=payload)
+
+    assert response.status_code == 401
+
+
+def test_telegram_login_rejects_wrong_hash():
+    payload = _sign_telegram_payload(id=555, first_name="Beto")
+    payload["hash"] = "0" * 64
+
+    response = _client().post("/auth/telegram", json=payload)
+
+    assert response.status_code == 401
+
+
+def test_telegram_login_rejects_expired_auth_date():
+    payload = _sign_telegram_payload(id=555, first_name="Beto", auth_date=int(time_module.time()) - 999999)
+
+    response = _client().post("/auth/telegram", json=payload)
+
+    assert response.status_code == 401

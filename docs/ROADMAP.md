@@ -19,10 +19,9 @@ service que já existia".
 - [`roadmap-bot.md`](roadmap-bot.md) — o bot de Telegram em si. 18 itens
   entregues, 1 pendência de longo prazo (testes de handler/integração).
 - [`roadmap-api.md`](roadmap-api.md) — API HTTP (`api/`) sobre
-  `bot/services/`. Em andamento: auth por token pessoal + endpoints de
-  leitura de matérias/atividades/faltas/notas prontos; faltam
-  frequência/média, endpoints de escrita, e o Telegram Login Widget (pro
-  site).
+  `bot/services/`. CRUD completo (leitura, frequência/média, escrita) pras
+  4 entidades, mais o Telegram Login Widget (`POST /auth/telegram`) pro
+  site; falta só decidir paginação.
 - [`roadmap-app.md`](roadmap-app.md) — site (React) e app Android/iOS
   (React Native + widget). Ainda não começados; a API é o que os
   desbloqueia.

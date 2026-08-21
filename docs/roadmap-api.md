@@ -69,18 +69,29 @@ Ver [`ROADMAP.md`](ROADMAP.md) para o índice geral entre frentes, e
    - 49 testes de API no total agora (`tests/test_api.py`), cobrindo
      autenticação, posse, validação (dia da semana inválido, quantidade
      ≤0, nota negativa) e conflito de horário.
+5. **Telegram Login Widget** (2026-08-21) — `POST /auth/telegram`, login
+   pro site (adiantado antes do site existir, por pedido explícito — ver
+   [`specs/api-design.md`](specs/api-design.md) pra decisão completa):
+   - Valida a assinatura HMAC-SHA256 do payload do widget contra
+     `SHA256(TELEGRAM_TOKEN)`, rejeita `auth_date` com mais de 24h.
+   - Não cria um mecanismo de sessão novo: resolve o usuário com
+     `user_service.get_or_create_user` e emite um `AccessToken` comum
+     (mesmo mecanismo do `/tokendeacesso` do bot) — o site autentica
+     depois exatamente como o app, via Bearer token.
+   - 5 testes novos em `tests/test_api.py` (usuário novo, usuário
+     existente, payload adulterado, hash errado, `auth_date` expirado).
 
 Ver `git log` para o histórico completo de commits de cada item.
 
 ## 🎯 Próximos passos
 
-- **Telegram Login Widget** — autenticação pro site (diferente do token
-  pessoal usado pelo app), ver
-  [`specs/frontend-web-and-app.md`](specs/frontend-web-and-app.md). Só
-  faz sentido quando o site começar de verdade.
 - Decidir se listagens ganham paginação real — a API não tem o limite de
   4096 caracteres do Telegram, mas listas grandes ainda merecem
   paginação por performance/UX.
+- Onde o site vai guardar o token emitido por `/auth/telegram` (e se vale
+  a pena dar expiração/rotação a esses tokens especificamente) — decisão
+  adiada pra quando o site começar de verdade, ver
+  [`roadmap-app.md`](roadmap-app.md).
 
 ## Lembrete operacional
 

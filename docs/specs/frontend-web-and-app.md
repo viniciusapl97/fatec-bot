@@ -50,7 +50,9 @@ vai precisar de uma peça nativa**, mesmo com React Native:
   "Entrar com Telegram", o Telegram autentica e devolve um payload
   assinado (`user_id`, nome, username, foto) pro backend validar o hash.
   Zero senha nova pra gerenciar, e o `user_id` já bate com `User.user_id`
-  no banco. **Ainda não implementado.**
+  no banco. **Já implementado no backend** (`POST /auth/telegram`, ver
+  [`specs/api-design.md`](api-design.md)) — adiantado antes do site
+  existir; falta só o botão/fluxo no frontend quando o site começar.
 - **App/widget**: como esse app é só pra uso pessoal (sideload, sem loja),
   não vale a pena replicar o fluxo de Login Widget — mais simples é o
   **token de acesso pessoal** vinculado ao `user_id`, colado uma vez na

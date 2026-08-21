@@ -140,3 +140,20 @@ class GradeCreate(BaseModel):
 class GradeUpdate(BaseModel):
     name: str
     value: Decimal = Field(ge=0)
+
+
+class TelegramLoginPayload(BaseModel):
+    """Payload que o Telegram Login Widget devolve pro frontend após o login — ver api/routers/auth.py."""
+
+    id: int
+    first_name: str
+    last_name: str | None = None
+    username: str | None = None
+    photo_url: str | None = None
+    auth_date: int
+    hash: str
+
+
+class AccessTokenOut(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
