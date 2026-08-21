@@ -44,7 +44,7 @@ There is no linter/formatter configured in this repo.
 
 `tests/conftest.py` sets safe defaults for these via `os.environ.setdefault(...)` at the very top of the file, before any `bot.*` import, specifically so the test suite doesn't need a real `.env`.
 
-See `docs/ROADMAP.md` for what's already been implemented, known gaps/bugs, and suggested next steps — keep it updated when you finish or defer something.
+See `docs/ROADMAP.md` for an index into per-area roadmaps (`docs/roadmap-bot.md`, `-api.md`, `-app.md`, `-hosting.md`) and design specs (`docs/specs/`) — what's already been implemented, known gaps, and next steps for each area. Update the relevant roadmap file when you finish or defer something; write a new spec only for a genuinely non-obvious design decision, not for mechanical additions.
 
 ## Architecture
 
@@ -72,7 +72,7 @@ Every multi-step flow (`/addmateria`, `/faltei`, `/lembrar`, `/fatec`, etc.) is 
 
 A FastAPI app that exposes `bot/services/` over HTTP, for the (future) web/React Native clients — it's a second, independent consumer of the same services layer that `bot/handlers/` already uses, not a rewrite of anything. `api/main.py` is the ASGI app; `api/deps.py` has the two shared dependencies (`get_db`, `get_current_user`); `api/routers/*.py` are one file per resource; `api/schemas.py` has the Pydantic response models (kept separate from `bot/db/models.py` on purpose, so a DB column change doesn't silently change the API contract).
 
-- **Auth is a personal access token, not the Telegram Login Widget** (that's reserved for the eventual public-facing website — see `docs/ROADMAP.md`). `/tokendeacesso` in the bot (`bot/handlers/user_settings_handler.py`) generates one via `access_token_service.create_access_token`; only its SHA-256 hash is stored (`AccessToken.token_hash`), so the plaintext is shown exactly once and can't be recovered — `/revogartokens` deletes all of a user's tokens if one leaks. Send it as `Authorization: Bearer <token>`; `api/deps.get_current_user` resolves it back to a `User` via `access_token_service.get_user_by_token`.
+- **Auth is a personal access token, not the Telegram Login Widget** (that's reserved for the eventual public-facing website — see `docs/specs/api-design.md` and `docs/specs/frontend-web-and-app.md`). `/tokendeacesso` in the bot (`bot/handlers/user_settings_handler.py`) generates one via `access_token_service.create_access_token`; only its SHA-256 hash is stored (`AccessToken.token_hash`), so the plaintext is shown exactly once and can't be recovered — `/revogartokens` deletes all of a user's tokens if one leaks. Send it as `Authorization: Bearer <token>`; `api/deps.get_current_user` resolves it back to a `User` via `access_token_service.get_user_by_token`.
 - Adding an endpoint = add a Pydantic schema in `api/schemas.py`, a router function in `api/routers/` that takes `user: User = Depends(get_current_user)` (and `db: Session = Depends(get_db)` if it needs to query more than `user` itself), call the matching `bot/services/*` function, and `include_router(...)` it in `api/main.py`.
 
 ### Migrations (Alembic)

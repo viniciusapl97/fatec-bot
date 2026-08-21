@@ -1,326 +1,41 @@
-# Roadmap
+# Roadmap — Índice
 
-Mapa do que já foi feito e do que ainda falta no Jovis. Mantido manualmente
-entre sessões — atualize esta lista ao concluir ou decidir adiar algo.
+Mapa de tudo que existe pra manter contexto entre sessões. Cada frente tem
+seu próprio arquivo de roadmap (o que já foi feito, o que falta); decisões
+de design com alguma ambiguidade real (não mudanças mecânicas) viram um
+spec em `specs/`, referenciado pelo roadmap da frente correspondente.
 
-Última atualização: 2026-08-21.
+Atualize o roadmap da frente que você tocou ao concluir ou decidir adiar
+algo. Crie um spec novo só quando a decisão não for óbvia a partir do
+código — coisa tipo "por que essa lib e não aquela", "por que esse modelo
+de autenticação", não "adicionei mais um endpoint que só espelha um
+service que já existia".
 
-## ✅ Feito
+Última reorganização: 2026-08-21 (era um arquivo único até aqui — ver
+`git log -- docs/ROADMAP.md` se precisar do histórico anterior).
 
-Revisão de código completa (2026-08-21) encontrou e corrigiu 4 bugs críticos
-que quebravam o bot em produção:
-- `dialogs.py` sem várias constantes referenciadas por `activity_handler.py`
-  e `subject_handler.py` — `/gerenciartrabalhos` e `/gerenciarprovas`
-  estavam 100% quebrados (`AttributeError`).
-- `/cancelar` quebrado em `/broadcast`, `/lembrar` e `/bug` (fallback
-  passava uma string do `dialogs` como callback do `CommandHandler` em vez
-  de uma função).
-- Hacks de `Update`/`CallbackQuery` falsos em `activity_handler.py` e
-  `grade_handler.py` que quebravam ao recarregar a tela após editar uma
-  atividade ou nota.
+## Roadmaps por frente
 
-Depois da correção dos bugs, implementado nesta ordem:
-1. Fuso horário (`America/Sao_Paulo`) aplicado via `Defaults(tzinfo=...)` —
-   corrigiu o lembrete diário de prazos, que disparava no horário errado.
-2. `conversation_timeout` (10 min) em todos os `ConversationHandler`s —
-   evita que uma conversa abandonada fique presa pra sempre.
-3. Persistência dos lembretes personalizados (`/lembrar`) — antes viviam só
-   em memória e somem num restart; agora ficam na tabela `reminders` e são
-   reagendados na inicialização (`main.py:reschedule_pending_reminders`).
-4. `%` de frequência por matéria (campo opcional `total_classes` +
-   `subject_service.get_attendance_info`) e média de notas
-   (`grade_service.get_average`) — aparecem em `/faltas`, `/relatorio` e
-   `/gerenciarnotas`.
-5. `/exportar` — baixa um JSON com tudo do usuário (matérias, atividades,
-   faltas, notas, lembretes pendentes).
-6. Suíte de testes unitários (`tests/`, pytest, SQLite em memória) cobrindo
-   toda a camada `bot/services/` — 70 testes.
-7. `CLAUDE.md` e `docs/ROADMAP.md` (este arquivo).
-8. `/meuslembretes` — lista os lembretes pendentes do usuário com um botão
-   de cancelar cada um; ao cancelar, remove tanto o registro no banco
-   quanto o job agendado em memória (`job_queue.get_jobs_by_name` +
-   `schedule_removal()`), senão o lembrete dispararia mesmo cancelado.
-9. `/privacidade` — implementado de verdade (antes só era citado no
-   `/help`, sem handler). Texto em `dialogs.PRIVACY_POLICY_TEXT`,
-   informativo, não é uma política jurídica formal — revisar/atualizar se
-   o que o bot coleta ou compartilha mudar.
-10. Conflito de horário no `/addmateria` manual — nova
-    `subject_service.check_conflict_with_existing` (mesma lógica de
-    sobreposição do `course_service.check_schedule_conflict`, mas
-    comparando com as matérias já cadastradas do usuário, não com o
-    catálogo). Se colidir, avisa qual matéria conflita e pede um novo
-    horário de início (volta pro estado `START_TIME` da conversa).
-    4 testes novos em `tests/test_subject_service.py`.
-11. Edição de horário de matéria em `/gerenciarmaterias` — a lógica de
-    conversão/validação de `start_time`/`end_time` já existia em
-    `receive_field_update` (não usada, faltavam os botões). Adicionados
-    os botões "Horário de Início"/"Horário de Término" em
-    `build_subject_edit_view`, e a edição agora passa pela mesma checagem
-    de conflito do item 10 — `check_conflict_with_existing` ganhou o
-    parâmetro `exclude_subject_id` pra a matéria não colidir consigo
-    mesma. 2 testes novos.
-12. Resumo semanal automático — job `send_weekly_summary_job`
-    (`bot/jobs.py`) roda toda segunda às 08:00 (`job_queue.run_daily(...,
-    days=(1,))`; atenção: no python-telegram-bot v20+ `days` é
-    0-6=domingo-sábado, não a convenção antiga de segunda-domingo) e manda
-    pra cada usuário cadastrado o mesmo resumo do `/semana`. Extraído
-    `build_week_summary_message(db, user)` de `common.py` pra ser
-    reaproveitado tanto pelo comando quanto pelo job.
-13. `/notificacoes` — liga/desliga os avisos automáticos de prazo por
-    usuário (`User.notifications_enabled`, default `True`). Comando +
-    botão de alternância; `check_deadlines_job` pula quem desativou via
-    `user_service.get_user_ids_with_notifications_disabled`. **Bônus: ao
-    testar isso encontrei e corrigi um bug real e pré-existente** —
-    `check_deadlines_job` chamava `activity_service.get_upcoming_activities`,
-    mas essa função sempre esteve definida em `user_service.py`, não em
-    `activity_service.py`. Ou seja, o job diário de lembretes de prazo
-    vinha estourando `AttributeError` (e sendo engolido pelo
-    APScheduler) toda vez que rodava — os lembretes de "vence amanhã" /
-    "vence em 3 dias" nunca tinham sido entregues de verdade em
-    produção. Corrigido trocando a chamada para `user_service.get_upcoming_activities`.
-    3 testes novos em `tests/test_user_service.py`.
-14. `/exportarcalendario` — gera um `.ics` (iCalendar/RFC 5545) com os
-    trabalhos e provas do usuário, pra importar no Google Agenda/Apple
-    Calendário/Outlook. É um retrato do momento (snapshot baixável), não
-    uma assinatura ao vivo — o bot não tem servidor HTTP público pra
-    hospedar uma URL de calendário que os apps re-sincronizem sozinhos.
-    Gerado à mão em `export_service.build_activities_ics` (sem dependência
-    nova: escaping e "line folding" do RFC 5545 implementados na unha),
-    validado de verdade parseando o arquivo gerado com a lib `icalendar`
-    (só pra conferência, não é dependência do projeto). **Bug real
-    encontrado e corrigido no processo**: a primeira versão do handler
-    (`export_handler.py:export_calendar`) montava o `.ics` FORA do
-    `with SessionLocal()`, e como isso acessa `activity.subject.name`
-    (lazy load), quebrava com `DetachedInstanceError` assim que a sessão
-    fechava — corrigido movendo a montagem do `.ics` pra dentro do bloco
-    da sessão. 4 testes novos em `tests/test_export_service.py`.
-15. `/stats` pra admin — contagens gerais (`bot/services/stats_service.py`):
-    usuários cadastrados, matérias, atividades (trabalhos/provas
-    separados), registros de falta, notas lançadas, lembretes pendentes.
-    **Nota de escopo:** `User` não guarda data de cadastro nem de último
-    acesso, então "usuários ativos" aqui significa "total já cadastrado",
-    não "ativo recentemente" — não dá pra medir isso sem adicionar uma
-    coluna de timestamp e passar a atualizá-la a cada interação (fica
-    como possível refinamento futuro). Registrado em `setup_admin_handlers()`
-    junto com `/broadcast`/`/enviar`, protegido por `@admin_only`. 2 testes
-    novos em `tests/test_stats_service.py`.
-16. Horário de notificação configurável por usuário
-    (`/horarionotificacao`) — grade de botões 0h-23h,
-    `User.notification_hour` (default 9). Isso mudou a arquitetura do job
-    de prazos: antes `check_deadlines_job` rodava **uma vez por dia** às
-    9h fixas pra todo mundo (`run_daily`); agora roda **de hora em hora**
-    (`run_repeating(..., interval=timedelta(hours=1))`) e filtra por
-    dentro quem tem `notification_hour == hora_atual` via
-    `user_service.get_user_ids_with_notification_hour`. 3 testes novos em
-    `tests/test_user_service.py`.
+- [`roadmap-bot.md`](roadmap-bot.md) — o bot de Telegram em si. 18 itens
+  entregues, 1 pendência de longo prazo (testes de handler/integração).
+- [`roadmap-api.md`](roadmap-api.md) — API HTTP (`api/`) sobre
+  `bot/services/`. Em andamento: auth por token pessoal + endpoints de
+  leitura de matérias/atividades/faltas/notas prontos; faltam
+  frequência/média, endpoints de escrita, e o Telegram Login Widget (pro
+  site).
+- [`roadmap-app.md`](roadmap-app.md) — site (React) e app Android/iOS
+  (React Native + widget). Ainda não começados; a API é o que os
+  desbloqueia.
+- [`roadmap-hosting.md`](roadmap-hosting.md) — deploy. Ainda rodando
+  local; plano combinado é AWS free tier (EC2 + RDS), pausado por agora.
 
-    ⚠️ **Migração pendente em produção**: assim como `notifications_enabled`
-    (item 13), a coluna `notification_hour` só é criada automaticamente em
-    bancos novos via `create_all()`. Numa instância já rodando é preciso
-    `ALTER TABLE users ADD COLUMN notification_hour INTEGER NOT NULL DEFAULT 9;`
-    antes do deploy — reforça por que Alembic (ver abaixo) vale a pena.
-17. Paginação em `/grade` e `/calendario` — **automática**, não muda nada
-    pra quem tem poucas matérias/atividades (o caso comum): só entra em
-    ação se a mensagem inteira não couber no limite de 4096 caracteres do
-    Telegram (checado contra um limiar conservador de 3500, com folga pro
-    rodapé "Página X de Y" + botões). `/calendario` pagina por contagem
-    fixa de itens (`ACTIVITIES_PER_PAGE = 10`); `/grade` pagina por **dia
-    da semana** (`SUBJECT_DAYS_PER_PAGE = 2`) pra nunca cortar as matérias
-    de um dia no meio entre duas páginas. Mesmo padrão de botões
-    Anterior/Próxima já usado no onboarding do `/fatec`.
+## Specs (decisões de design)
 
-    Não cobri essas duas funções (`build_subject_list_view`,
-    `build_activity_list_view`) na suíte pytest — mantendo a política já
-    documentada de só testar `services/` com unidade automatizada — mas
-    validei manualmente de forma rigorosa: forcei 32 matérias e 62
-    atividades, naveguei por todas as páginas geradas conferindo que
-    nenhuma jamais ultrapassa 4096 caracteres, e testei os handlers
-    completos (comando + callback) ponta a ponta.
-18. Migrations com Alembic (`migrations/`) — substitui
-    `Base.metadata.create_all()`, que foi removido de `main.py` e
-    `seed_db.py`. `migrations/env.py` lê a `DATABASE_URL` de
-    `bot.core.settings` em runtime (nada hardcoded em `alembic.ini`).
-    Gerada a migration baseline (`migrations/versions/6cde7bf58518_*.py`)
-    cobrindo as 7 tabelas atuais. `requirements.txt` ganhou `alembic` e foi
-    convertido de UTF-16 pra UTF-8 nesse processo (ver nota abaixo).
-
-    ⚠️ **Passo único de adoção necessário no banco de dev/produção que já
-    existe** (o que você já está rodando localmente): em vez de
-    `alembic upgrade head`, rode `alembic stamp head` na primeira vez —
-    isso marca o banco como atualizado sem tentar recriar tabelas que já
-    existem. Depois desse passo único, é sempre `alembic upgrade head`
-    normalmente. Resolve de vez os dois `ALTER TABLE` manuais pendentes
-    dos itens 13 e 16 (`notifications_enabled`, `notification_hour`) — a
-    migration baseline já inclui as duas colunas, então `stamp head`
-    também cobre esse débito.
-
-    Validado de ponta a ponta contra um Postgres real (container Docker
-    `postgres:16-alpine`, já removido): `alembic upgrade head` do zero →
-    `alembic check` sem diferença pendente → `alembic downgrade base`
-    limpo → simulei o estado atual do usuário (tabelas via `create_all()`,
-    sem Alembic) → `alembic stamp head` não tocou nos dados e `alembic
-    check` continuou sem diferença → rodei operações reais dos `services/`
-    (criar usuário, matéria, atividade, falta, nota, lembrete, calcular
-    frequência) direto sobre o schema criado pela migration, tudo
-    funcionando. Suíte pytest (88 testes, SQLite) não usa `main.py`/
-    `seed_db.py` diretamente, então não foi afetada.
-
-    **Nota sobre `requirements.txt`**: estava em UTF-16 (provavelmente
-    `pip freeze` no PowerShell do Windows) — ao tentar só adicionar uma
-    linha, a ferramenta de edição preservou a codificação original e
-    quebrou o `pip` (erro "Invalid requirement" com bytes `\x00` literais
-    no meio do nome do pacote). Precisei reescrever o arquivo via shell
-    (heredoc) pra forçar UTF-8. Detalhe registrado no `CLAUDE.md` pra não
-    se repetir.
-19. **Primeira fatia da API** (`api/`) — começo da implementação do plano de
-    frontend web/app (ver seção abaixo). FastAPI expondo `bot/services/` por
-    HTTP, sem duplicar lógica nenhuma:
-    - Autenticação por **token de acesso pessoal** (não Login Widget — esse
-      fica pro site, mais pra frente). Novo model `AccessToken`
-      (`bot/db/models.py`) guarda só o hash SHA-256 do token; comandos
-      `/tokendeacesso` (gera, mostra uma vez só) e `/revogartokens`
-      (invalida todos de uma vez) em `user_settings_handler.py`. Migration
-      `e00d525f47d4_adiciona_access_tokens`.
-    - Endpoints: `GET /health` (sem auth), `GET /me`, `GET /subjects`.
-    - `api/deps.py` tem as duas dependências compartilhadas (`get_db`,
-      `get_current_user`); `api/schemas.py` tem os modelos Pydantic de
-      resposta, deliberadamente separados de `bot/db/models.py` pra uma
-      mudança de coluna não vazar sem querer pro contrato da API.
-    - **Achado no processo**: testar a API com o `TestClient` do FastAPI
-      contra o SQLite dos testes dava `sqlite3.OperationalError: no such
-      table` — o `TestClient` roda a app numa thread separada da do teste,
-      e o pool padrão do SQLite cria um banco em memória novo por thread.
-      `bot/db/base.py` agora força `StaticPool` (+ `check_same_thread:
-      False`) só quando a URL é `sqlite`, o que resolve isso sem afetar o
-      Postgres de produção em nada.
-    - Testado de ponta a ponta contra Postgres real (container Docker,
-      removido ao final): gerar token pelo bot → autenticar na API →
-      `/me` e `/subjects` retornando os dados certos → token inválido
-      rejeitado (401) → sem token rejeitado (403) → revogar invalida na
-      hora. Rodei também com `uvicorn` de verdade (não só `TestClient`),
-      incluindo o `/docs` (Swagger) que vem de brinde com o FastAPI.
-    - 12 testes novos (`tests/test_access_token_service.py`,
-      `tests/test_api.py`). Suíte total: **100 testes**.
-20. **Mais endpoints de leitura na API**: `GET /activities` (aceita
-    `?activity_type=trabalho|prova`, reaproveitando
-    `activity_service.get_activities_by_user_and_type`), `GET /absences`,
-    `GET /grades`. Os três embutem `subject_name` na resposta (não é campo
-    direto do model — montado no router, não via `from_attributes`
-    automático) porque um registro de atividade/falta/nota sozinho, sem
-    saber de qual matéria é, não serve pra muita coisa numa tela de app.
-    Nova `absence_service.get_absences_by_user` (só existia por matéria).
-
-    **Bug de isolamento de teste encontrado e corrigido no processo**: testes
-    de API que não pedem a fixture `db` (ex.: "token inválido → 401") nunca
-    disparavam a criação de tabelas, que vivia dentro da fixture `db`. Rodando
-    a suíte inteira isso passava batido (outro arquivo de teste já tinha
-    criado as tabelas antes), mas rodar só `pytest tests/test_api.py` sozinho
-    quebrava com `no such table`. Corrigido movendo `Base.metadata.create_all`
-    pra uma fixture `autouse`, escopo de sessão, em `tests/conftest.py` —
-    roda uma vez antes de qualquer teste, independente de quais/quantos usam
-    `db`.
-
-    Testado de ponta a ponta contra Postgres real (mesmo container Docker
-    descartável): schema migrado sem diferença pendente, os 4 endpoints
-    (`/activities`, `/activities?activity_type=prova`, `/absences`,
-    `/grades`) retornando os dados certos via `curl` contra um `uvicorn`
-    de verdade. 9 testes novos (2 em `tests/test_absence_service.py`, 7 em
-    `tests/test_api.py`). Suíte total: **109 testes**.
-
-Ver `git log` para o histórico completo de commits de cada item.
-
-## 🔭 Mais ambiciosas / longo prazo
-
-- Testes de handler/integração (fora de escopo da suíte atual de
-  propósito — exigem mockar bastante a API do `python-telegram-bot`; os
-  `services/` concentram a lógica de negócio testável isoladamente).
-
-## 🚧 Em andamento: API → depois frontend web + app Android/iOS
-
-Ideia discutida em 2026-08-21, guardada em standby, depois retomada no mesmo
-dia — usuário pediu pra começar a implementação da API. Evoluiu ao longo da
-conversa: começou como "só um site" → depois "site + widget Android" →
-decisão final "site + app completo (React Native), com widget, iOS talvez um
-dia" → **API em implementação agora** (ver item 19 em ✅ Feito).
-
-### A base: API por cima de `bot/services/`
-Toda a regra de negócio já está isolada em `bot/services/`, sem nenhuma
-dependência do Telegram — dá pra expor esses mesmos services por trás de uma
-API (FastAPI, `api/`) sem reescrever a lógica. **Isso é o que o site e o app
-têm em comum** — a UI de cada um é separada (ver stack abaixo), só a API é
-compartilhada.
-
-### Próximos endpoints/passos da API
-- Frequência/média por matéria (reaproveitar `subject_service.get_attendance_info` /
-  `grade_service.get_average`) — ainda não exposto. Provavelmente como
-  `GET /subjects/{id}/attendance` e embutido na resposta de notas por
-  matéria, não achatado nos endpoints de listagem que já existem.
-- Endpoints de escrita (criar/editar/apagar matéria, atividade, falta, nota) —
-  a "paridade completa" do app com o bot depende disso.
-- Decidir se listagens ganham paginação real (a API não tem o limite de 4096
-  caracteres do Telegram, mas listas grandes ainda merecem paginação por
-  performance/UX).
-
-### Stack decidida
-- **Site**: React.
-- **App**: React Native, via Expo (facilita o build local/sideload sem conta
-  de desenvolvedor). Android primeiro; iOS "um dia" fica bem mais barato de
-  adicionar depois por já estar no React Native, em vez de começar do zero em
-  Swift futuramente.
-- **Widget de tela inicial** (o motivo original de cogitar um app nativo): o
-  motor JS do React Native roda dentro do processo do app — um widget é
-  renderizado pelo *sistema operacional* fora desse processo, então **sempre
-  vai precisar de uma peça nativa**, mesmo com React Native:
-  - Android: lib `react-native-android-widget` — desenha o layout do widget
-    em JSX, ela compila pra views nativas em build time. É a melhor opção
-    atual pra esse cenário, não é "rodar JS dentro do widget".
-  - iOS (se um dia acontecer): a Apple exige SwiftUI pra widgets, sem exceção
-    — não existe bridge de React Native pra isso. Não tem como fugir de Swift
-    nessa parte específica, mesmo com o app todo em React Native.
-- **React Native Web** é uma opção pra unificar o código de UI entre site e
-  app (usado em produção por apps grandes, ex. o X/Twitter novo) — mas não é
-  o ponto de partida recomendado. Começar com React puro no site e React
-  Native no app (compartilhando só os tipos/chamadas de API) é mais simples;
-  migrar pra RN Web depois é uma opção, não um requisito.
-
-### Autenticação — diferente pro site e pro app
-- **Site**: como o bot serve qualquer usuário do Telegram (não é só de uso
-  pessoal), o caminho certo é o **Telegram Login Widget** — usuário clica
-  "Entrar com Telegram", o Telegram autentica e devolve um payload assinado
-  (`user_id`, nome, username, foto) pro backend validar o hash. Zero senha
-  nova pra gerenciar, e o `user_id` já bate com `User.user_id` no banco.
-- **App/widget**: como esse app é só pra uso pessoal (sideload, sem loja), não
-  vale a pena replicar o fluxo de Login Widget — mais simples é o **token de
-  acesso pessoal** vinculado ao `user_id`, colado uma vez na configuração do
-  app. **Já implementado** (item 19): `/tokendeacesso` no bot.
-
-### Estimativa por nível de ambição
-- MVP somente-leitura (login + ver grade/notas/faltas/frequência/calendário),
-  só no site: alguns fins de semana.
-- Paridade completa (criar/editar/apagar tudo, igual ao bot) no site e/ou no
-  app: várias semanas, part-time — o app soma tempo extra se React
-  Native/Expo for novidade.
-- Widget Android funcionando (`react-native-android-widget`): escopo pequeno
-  uma vez que a API já existe — não precisa esperar o app inteiro ficar
-  pronto pra fazer o widget.
-- Design autoral + gráficos de evolução + iOS + tempo real ("muito foda"):
-  meses — a parte mais aberta, sem teto.
-
-### Recomendação quando retomar
-1. API primeiro (FastAPI sobre `bot/services/`), independente de qual
-   cliente vem depois.
-2. App Android (React Native/Expo) com o essencial (ver/gerenciar
-   grade, atividades, faltas, notas) + o widget — é o que motivou a
-   conversa, então é o que traz retorno mais rápido.
-3. Site como consumidor adicional da mesma API, quando fizer sentido.
-4. iOS e unificação de UI (React Native Web) só depois de validar o resto.
-
-## Hospedagem
-
-Ainda rodando localmente. Decisão em aberto (2026-08-21): o usuário quer
-aproveitar o assunto pra estudar AWS, usando o free tier (EC2 t2/t3.micro +
-RDS Postgres t3/t4g.micro, ambos elegíveis por 12 meses em conta nova).
-Ainda não começou — avisou que "por enquanto não" quando perguntado se
-queria seguir com o setup. Quando retomar, o plano combinado foi: criar
-budget alert primeiro, depois IAM user próprio, EC2, RDS, rodar o bot como
-systemd service, CloudWatch pros logs.
+- [`specs/alembic-migrations.md`](specs/alembic-migrations.md) — por que
+  Alembic, como adotar num banco que já existe, validação feita.
+- [`specs/api-design.md`](specs/api-design.md) — autenticação da API
+  (token pessoal vs. Login Widget), separação `api/schemas.py` vs.
+  `bot/db/models.py`, pegadinhas de teste (SQLite + threads).
+- [`specs/frontend-web-and-app.md`](specs/frontend-web-and-app.md) —
+  stack decidida (React / React Native / Expo), por que um widget de
+  tela inicial sempre precisa de peça nativa, autenticação site vs. app.
