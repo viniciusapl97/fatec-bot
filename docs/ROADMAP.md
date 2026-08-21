@@ -94,12 +94,21 @@ Depois da correção dos bugs, implementado nesta ordem:
     (lazy load), quebrava com `DetachedInstanceError` assim que a sessão
     fechava — corrigido movendo a montagem do `.ics` pra dentro do bloco
     da sessão. 4 testes novos em `tests/test_export_service.py`.
+15. `/stats` pra admin — contagens gerais (`bot/services/stats_service.py`):
+    usuários cadastrados, matérias, atividades (trabalhos/provas
+    separados), registros de falta, notas lançadas, lembretes pendentes.
+    **Nota de escopo:** `User` não guarda data de cadastro nem de último
+    acesso, então "usuários ativos" aqui significa "total já cadastrado",
+    não "ativo recentemente" — não dá pra medir isso sem adicionar uma
+    coluna de timestamp e passar a atualizá-la a cada interação (fica
+    como possível refinamento futuro). Registrado em `setup_admin_handlers()`
+    junto com `/broadcast`/`/enviar`, protegido por `@admin_only`. 2 testes
+    novos em `tests/test_stats_service.py`.
 
 Ver `git log` para o histórico completo de commits de cada item.
 
 ## 🔭 Mais ambiciosas / longo prazo
 
-- `/stats` pra admin (usuários ativos, matérias/atividades cadastradas).
 - Horário de notificação configurável por usuário (hoje é fixo às 9h pra
   todo mundo).
 - Paginação em `/grade`/`/calendario` pra quem acumular muitas

@@ -13,7 +13,7 @@ from telegram.ext import (
 )
 
 from bot.db.base import SessionLocal
-from bot.services import user_service
+from bot.services import user_service, stats_service
 from bot.core import dialogs
 from bot.core.conversation_timeout import CONVERSATION_TIMEOUT_SECONDS, notify_conversation_timeout
 from bot.decorators import admin_only # Importamos nosso decorador de segurança
@@ -62,6 +62,15 @@ async def send_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     except Exception as e:
         logger.error(f"Erro ao enviar mensagem para {target_user_id}: {e}")
         await update.message.reply_html(dialogs.ADMIN_SEND_FAILURE_GENERAL.format(user_id=target_user_id))
+
+
+@admin_only
+async def bot_stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """(Admin) Mostra estatísticas gerais de uso do bot."""
+    with SessionLocal() as db:
+        stats = stats_service.get_bot_stats(db)
+
+    await update.message.reply_html(dialogs.ADMIN_STATS_TEXT.format(**stats))
 
 
 @admin_only
@@ -162,6 +171,7 @@ def setup_admin_handlers() -> list:
     )
 
     send_to_user_handler = CommandHandler("enviar", send_to_user)
-    
-    return [broadcast_handler, send_to_user_handler]
+    stats_handler = CommandHandler("stats", bot_stats)
+
+    return [broadcast_handler, send_to_user_handler, stats_handler]
 

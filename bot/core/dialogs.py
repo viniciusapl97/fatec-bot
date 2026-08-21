@@ -409,6 +409,15 @@ ADMIN_SEND_SUCCESS = "✅ Mensagem enviada com sucesso para o usuário {user_nam
 ADMIN_SEND_FAILURE_NOT_FOUND = "❌ Falha: Usuário com ID {user_id} não encontrado no banco de dados."
 ADMIN_SEND_FAILURE_BLOCKED = "❌ Falha: Não foi possível enviar a mensagem. O usuário {user_name} (ID: {user_id}) provavelmente bloqueou o bot."
 ADMIN_SEND_FAILURE_GENERAL = "❌ Falha: Ocorreu um erro inesperado ao tentar enviar a mensagem para o usuário {user_id}."
+ADMIN_STATS_TEXT = (
+    "📊 <b>Estatísticas do Jovis</b>\n\n"
+    "👤 <b>Usuários cadastrados:</b> {total_users}\n"
+    "📚 <b>Matérias:</b> {total_subjects}\n"
+    "🗓️ <b>Atividades:</b> {total_activities} ({total_trabalhos} trabalhos, {total_provas} provas)\n"
+    "✖️ <b>Registros de falta:</b> {total_absence_records}\n"
+    "🎓 <b>Notas lançadas:</b> {total_grades}\n"
+    "🔔 <b>Lembretes pendentes:</b> {total_pending_reminders}"
+)
 
 
 # =============================================================================

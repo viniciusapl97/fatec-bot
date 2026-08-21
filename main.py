@@ -67,6 +67,7 @@ async def post_init_configuration(application: Application) -> None:
         BotCommand("deletardados", "Apaga permanentemente todos os seus dados do bot"),
         BotCommand("broadcast", "(Admin) Envia uma mensagem para todos os usuários"),
         BotCommand("enviar", "(Admin) Envia mensagem para um usuário"),
+        BotCommand("stats", "(Admin) Mostra estatísticas gerais de uso do bot"),
         BotCommand("lembrar", "Cria um lembrete personalizado"),
         BotCommand("meuslembretes", "Lista e permite cancelar seus lembretes pendentes"),
         BotCommand("exportar", "Baixa uma cópia de todos os seus dados em JSON"),
