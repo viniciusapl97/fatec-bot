@@ -164,7 +164,7 @@ uvicorn api.main:app --reload
 ```
 - Docs interativas (Swagger) em `http://localhost:8000/docs`.
 - **Autenticação**: token de acesso pessoal, não login por e-mail/senha. Gere um enviando `/tokendeacesso` pro bot (aparece só uma vez — guarde num lugar seguro) e mande em toda requisição como `Authorization: Bearer <token>`. Se suspeitar que vazou, `/revogartokens` no bot invalida todos de uma vez.
-- Endpoints atuais: `GET /health` (sem auth), `GET /me`, `GET /subjects` — mais virão conforme o site/app forem crescendo (ver `docs/ROADMAP.md`).
+- Endpoints atuais: `GET /health` (sem auth), `GET /me`, `GET /subjects`, `GET /activities` (aceita `?activity_type=trabalho|prova`), `GET /absences`, `GET /grades` — mais virão conforme o site/app forem crescendo (ver `docs/ROADMAP.md`).
 
 ### Rodando os testes
 Os testes cobrem `bot/services/` e a `api/` (via `TestClient` do FastAPI) e usam SQLite em memória, sem precisar de Postgres nem de token do Telegram de verdade:

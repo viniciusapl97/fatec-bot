@@ -23,6 +23,10 @@ def get_absences_by_subject(db: Session, subject: Subject) -> List[Absence]:
     """Retorna uma lista de todos os registros de falta para uma matéria específica."""
     return db.query(Absence).filter(Absence.subject_id == subject.id).order_by(Absence.absence_date.desc()).all()
 
+def get_absences_by_user(db: Session, user: User) -> List[Absence]:
+    """Retorna todos os registros de falta do usuário (todas as matérias), mais recentes primeiro."""
+    return db.query(Absence).filter(Absence.user_id == user.user_id).order_by(Absence.absence_date.desc()).all()
+
 def get_absence_by_id(db: Session, absence_id: int) -> Absence | None:
     """Busca um registro de falta pelo seu ID primário."""
     return db.query(Absence).filter(Absence.id == absence_id).first()

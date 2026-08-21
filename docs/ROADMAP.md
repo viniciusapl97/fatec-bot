@@ -201,6 +201,31 @@ Depois da correção dos bugs, implementado nesta ordem:
       incluindo o `/docs` (Swagger) que vem de brinde com o FastAPI.
     - 12 testes novos (`tests/test_access_token_service.py`,
       `tests/test_api.py`). Suíte total: **100 testes**.
+20. **Mais endpoints de leitura na API**: `GET /activities` (aceita
+    `?activity_type=trabalho|prova`, reaproveitando
+    `activity_service.get_activities_by_user_and_type`), `GET /absences`,
+    `GET /grades`. Os três embutem `subject_name` na resposta (não é campo
+    direto do model — montado no router, não via `from_attributes`
+    automático) porque um registro de atividade/falta/nota sozinho, sem
+    saber de qual matéria é, não serve pra muita coisa numa tela de app.
+    Nova `absence_service.get_absences_by_user` (só existia por matéria).
+
+    **Bug de isolamento de teste encontrado e corrigido no processo**: testes
+    de API que não pedem a fixture `db` (ex.: "token inválido → 401") nunca
+    disparavam a criação de tabelas, que vivia dentro da fixture `db`. Rodando
+    a suíte inteira isso passava batido (outro arquivo de teste já tinha
+    criado as tabelas antes), mas rodar só `pytest tests/test_api.py` sozinho
+    quebrava com `no such table`. Corrigido movendo `Base.metadata.create_all`
+    pra uma fixture `autouse`, escopo de sessão, em `tests/conftest.py` —
+    roda uma vez antes de qualquer teste, independente de quais/quantos usam
+    `db`.
+
+    Testado de ponta a ponta contra Postgres real (mesmo container Docker
+    descartável): schema migrado sem diferença pendente, os 4 endpoints
+    (`/activities`, `/activities?activity_type=prova`, `/absences`,
+    `/grades`) retornando os dados certos via `curl` contra um `uvicorn`
+    de verdade. 9 testes novos (2 em `tests/test_absence_service.py`, 7 em
+    `tests/test_api.py`). Suíte total: **109 testes**.
 
 Ver `git log` para o histórico completo de commits de cada item.
 
@@ -225,10 +250,11 @@ API (FastAPI, `api/`) sem reescrever a lógica. **Isso é o que o site e o app
 têm em comum** — a UI de cada um é separada (ver stack abaixo), só a API é
 compartilhada.
 
-### Próximos endpoints/passos da API (nenhum implementado ainda)
-- Endpoints de leitura que faltam: atividades (`/activities`), faltas
-  (`/absences`), notas (`/grades`), frequência/média (reaproveitar
-  `subject_service.get_attendance_info` / `grade_service.get_average`).
+### Próximos endpoints/passos da API
+- Frequência/média por matéria (reaproveitar `subject_service.get_attendance_info` /
+  `grade_service.get_average`) — ainda não exposto. Provavelmente como
+  `GET /subjects/{id}/attendance` e embutido na resposta de notas por
+  matéria, não achatado nos endpoints de listagem que já existem.
 - Endpoints de escrita (criar/editar/apagar matéria, atividade, falta, nota) —
   a "paridade completa" do app com o bot depende disso.
 - Decidir se listagens ganham paginação real (a API não tem o limite de 4096

@@ -4,7 +4,8 @@
 # bot/db/models.py, mas são um contrato próprio (não os mesmos objetos) —
 # assim uma mudança de coluna não vaza sem querer pra fora da API.
 
-from datetime import time
+from datetime import date, time
+from decimal import Decimal
 
 from pydantic import BaseModel
 
@@ -32,3 +33,30 @@ class SubjectOut(BaseModel):
     total_absences: int
 
     model_config = {"from_attributes": True}
+
+
+class ActivityOut(BaseModel):
+    id: int
+    activity_type: str
+    name: str
+    due_date: date
+    notes: str | None = None
+    subject_id: int
+    subject_name: str
+
+
+class AbsenceOut(BaseModel):
+    id: int
+    absence_date: date
+    quantity: int
+    notes: str | None = None
+    subject_id: int
+    subject_name: str
+
+
+class GradeOut(BaseModel):
+    id: int
+    name: str
+    value: Decimal
+    subject_id: int
+    subject_name: str

@@ -1,8 +1,9 @@
-from datetime import time
+from datetime import date, time
+from decimal import Decimal
 
 from fastapi.testclient import TestClient
 
-from bot.services import access_token_service, subject_service
+from bot.services import access_token_service, subject_service, activity_service, absence_service, grade_service, user_service
 from api.main import app
 
 
@@ -38,7 +39,6 @@ def test_me_returns_authenticated_user(db, user):
 
 
 def test_list_subjects_returns_only_own_subjects(db, user):
-    from bot.services import user_service
     other_user, _ = user_service.get_or_create_user(db, 999, "Outro", "outro")
     subject_service.create_subject(db, other_user, "Matéria de outra pessoa", "Prof. Z", "Segunda", "C1", None, None, 1)
 
@@ -54,3 +54,84 @@ def test_list_subjects_returns_only_own_subjects(db, user):
     assert len(body) == 1
     assert body[0]["name"] == "Cálculo I"
     assert body[0]["total_classes"] == 40
+
+
+def test_activities_requires_authentication():
+    assert _client().get("/activities").status_code == 403
+
+
+def test_list_activities_returns_only_own_and_embeds_subject_name(db, user):
+    other_user, _ = user_service.get_or_create_user(db, 999, "Outro", "outro")
+    other_subject = subject_service.create_subject(db, other_user, "Matéria de outro", "Prof. Z", "Segunda", "C1", None, None, 1)
+    activity_service.create_activity(db, other_user, other_subject, "Não é meu", date.today(), None, "prova")
+
+    subject = subject_service.create_subject(db, user, "Cálculo I", "Prof. X", "Segunda", "A1", None, None, 1)
+    activity_service.create_activity(db, user, subject, "P1", date(2026, 9, 10), "levar calculadora", "prova")
+    activity_service.create_activity(db, user, subject, "Trabalho 1", date(2026, 9, 15), None, "trabalho")
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().get("/activities", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body) == 2
+    assert all(item["subject_name"] == "Cálculo I" for item in body)
+
+
+def test_list_activities_filters_by_type(db, user):
+    subject = subject_service.create_subject(db, user, "Cálculo I", "Prof. X", "Segunda", "A1", None, None, 1)
+    activity_service.create_activity(db, user, subject, "P1", date.today(), None, "prova")
+    activity_service.create_activity(db, user, subject, "T1", date.today(), None, "trabalho")
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().get("/activities", params={"activity_type": "prova"}, headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body) == 1
+    assert body[0]["name"] == "P1"
+
+
+def test_absences_requires_authentication():
+    assert _client().get("/absences").status_code == 403
+
+
+def test_list_absences_returns_only_own_and_embeds_subject_name(db, user):
+    other_user, _ = user_service.get_or_create_user(db, 999, "Outro", "outro")
+    other_subject = subject_service.create_subject(db, other_user, "Matéria de outro", "Prof. Z", "Segunda", "C1", None, None, 1)
+    absence_service.add_absence(db, other_user, other_subject, date.today(), 1, None)
+
+    subject = subject_service.create_subject(db, user, "Cálculo I", "Prof. X", "Segunda", "A1", None, None, 1)
+    absence_service.add_absence(db, user, subject, date.today(), 2, "atestado")
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().get("/absences", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body) == 1
+    assert body[0]["subject_name"] == "Cálculo I"
+    assert body[0]["quantity"] == 2
+    assert body[0]["notes"] == "atestado"
+
+
+def test_grades_requires_authentication():
+    assert _client().get("/grades").status_code == 403
+
+
+def test_list_grades_returns_only_own_and_embeds_subject_name(db, user):
+    other_user, _ = user_service.get_or_create_user(db, 999, "Outro", "outro")
+    other_subject = subject_service.create_subject(db, other_user, "Matéria de outro", "Prof. Z", "Segunda", "C1", None, None, 1)
+    grade_service.add_grade(db, other_user, other_subject, "P1", Decimal("10.0"))
+
+    subject = subject_service.create_subject(db, user, "Cálculo I", "Prof. X", "Segunda", "A1", None, None, 1)
+    grade_service.add_grade(db, user, subject, "P1", Decimal("7.5"))
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().get("/grades", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body) == 1
+    assert body[0]["subject_name"] == "Cálculo I"
+    assert body[0]["value"] == "7.50"

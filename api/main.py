@@ -8,7 +8,7 @@
 
 from fastapi import FastAPI
 
-from api.routers import me, subjects
+from api.routers import me, subjects, activities, absences, grades
 
 app = FastAPI(
     title="Jovis API",
@@ -18,6 +18,9 @@ app = FastAPI(
 
 app.include_router(me.router)
 app.include_router(subjects.router)
+app.include_router(activities.router)
+app.include_router(absences.router)
+app.include_router(grades.router)
 
 
 @app.get("/health", tags=["health"])

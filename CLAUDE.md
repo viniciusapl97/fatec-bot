@@ -89,6 +89,7 @@ Schema changes go through Alembic (`migrations/`), not `Base.metadata.create_all
 - SQLite does **not** preserve `tzinfo` on `DateTime(timezone=True)` columns (Postgres does, via `TIMESTAMPTZ`); tests touching `Reminder.remind_at` compare with `.replace(tzinfo=None)` on both sides to sidestep this SQLite-only quirk.
 - No local Postgres binary in this environment, but `docker run postgres:16-alpine` works and is the way to validate anything migration/Postgres-type-related for real instead of trusting SQLite's looser typing.
 - `api/` tests use FastAPI's `TestClient` (`tests/test_api.py`) — real HTTP requests through the actual ASGI app, reusing the same `db`/`user` fixtures as the service tests. No mocking needed, unlike the Telegram handlers.
+- Table creation (`Base.metadata.create_all`) is a **session-scoped `autouse` fixture** (`tests/conftest.py:_create_tables`), not something only the `db` fixture does. It used to live inside `db`, which broke any test that hits the database without requesting `db` itself — e.g. an API test that only checks "invalid token → 401" never triggers `db`, so run alone (or before any `db`-using test) it hit a SQLite database with no tables yet at all. Session-scoped `autouse` guarantees tables exist before the first test regardless of which tests ran or in what order.
 
 ### Editor tooling gotcha
 

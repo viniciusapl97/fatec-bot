@@ -63,3 +63,30 @@ def test_delete_absence_by_id_decrements_subject_total(db, user):
 
 def test_delete_absence_by_id_returns_false_when_missing(db):
     assert absence_service.delete_absence_by_id(db, 999) is False
+
+
+def test_get_absences_by_user_orders_by_date_desc_across_subjects(db, user):
+    subject_a = _make_subject(db, user)
+    subject_b = subject_service.create_subject(db, user, "Redes", "Prof. Y", "Terça", "A2", None, None, 1)
+    older = date.today() - timedelta(days=10)
+    newer = date.today()
+
+    absence_service.add_absence(db, user, subject_a, older, 1, None)
+    absence_service.add_absence(db, user, subject_b, newer, 2, None)
+
+    absences = absence_service.get_absences_by_user(db, user)
+    assert [a.absence_date for a in absences] == [newer, older]
+
+
+def test_get_absences_by_user_only_returns_own_absences(db, user):
+    from bot.services import user_service
+    other_user, _ = user_service.get_or_create_user(db, 999, "Outro", "outro")
+    other_subject = subject_service.create_subject(db, other_user, "Matéria de outro", "Prof. Z", "Segunda", "C1", None, None, 1)
+    absence_service.add_absence(db, other_user, other_subject, date.today(), 1, None)
+
+    subject = _make_subject(db, user)
+    absence_service.add_absence(db, user, subject, date.today(), 1, None)
+
+    absences = absence_service.get_absences_by_user(db, user)
+    assert len(absences) == 1
+    assert absences[0].subject_id == subject.id

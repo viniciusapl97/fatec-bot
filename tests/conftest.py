@@ -15,10 +15,21 @@ from bot.db.base import Base, engine, SessionLocal
 from bot.services import user_service
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _create_tables():
+    """
+    Cria as tabelas uma vez por sessão de testes, antes de qualquer teste
+    rodar — inclusive os que não usam a fixture `db` (ex.: testes de API que
+    só checam autenticação, sem precisar inserir dados). Sem isso, um teste
+    desses rodando sozinho (ou antes de qualquer outro que use `db`) bate
+    num banco sem tabela nenhuma.
+    """
+    Base.metadata.create_all(bind=engine)
+
+
 @pytest.fixture()
 def db():
     """Sessão de banco isolada por teste (SQLite em memória; tabelas limpas ao final)."""
-    Base.metadata.create_all(bind=engine)
     session = SessionLocal()
     try:
         yield session
