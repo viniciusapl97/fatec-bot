@@ -181,36 +181,74 @@ Ver `git log` para o histórico completo de commits de cada item.
   propósito — exigem mockar bastante a API do `python-telegram-bot`; os
   `services/` concentram a lógica de negócio testável isoladamente).
 
-## 💭 Em standby: frontend web
+## 💭 Em standby: frontend web + app Android/iOS
 
 Ideia discutida em 2026-08-21, guardada pra depois — usuário pediu explicitamente
-pra só anotar, sem implementar nada por enquanto.
+pra só anotar, sem implementar nada por enquanto. Evoluiu ao longo da conversa:
+começou como "só um site" → depois "site + widget Android" → decisão final foi
+"site + app completo (React Native), com widget, iOS talvez um dia".
 
-**A pergunta:** dá pra ter um site onde o usuário entra com a conta do Telegram e
-vê as mesmas informações do bot (grade, notas, faltas/frequência, calendário)?
+### A base: API por cima de `bot/services/`
+Toda a regra de negócio já está isolada em `bot/services/`, sem nenhuma
+dependência do Telegram — dá pra expor esses mesmos services por trás de uma
+API (ex.: FastAPI) sem reescrever a lógica. **Isso é o que o site e o app têm
+em comum** — a UI de cada um é separada (ver stack abaixo), só a API é
+compartilhada. Comece por aqui, independente de qual cliente (site ou app)
+vier primeiro.
 
-**Por que é menos ambicioso do que parece:** toda a regra de negócio já está
-isolada em `bot/services/`, sem nenhuma dependência do Telegram — dá pra expor
-esses mesmos services por trás de uma API (ex.: FastAPI) sem reescrever a lógica.
+### Stack decidida
+- **Site**: React.
+- **App**: React Native, via Expo (facilita o build local/sideload sem conta
+  de desenvolvedor). Android primeiro; iOS "um dia" fica bem mais barato de
+  adicionar depois por já estar no React Native, em vez de começar do zero em
+  Swift futuramente.
+- **Widget de tela inicial** (o motivo original de cogitar um app nativo): o
+  motor JS do React Native roda dentro do processo do app — um widget é
+  renderizado pelo *sistema operacional* fora desse processo, então **sempre
+  vai precisar de uma peça nativa**, mesmo com React Native:
+  - Android: lib `react-native-android-widget` — desenha o layout do widget
+    em JSX, ela compila pra views nativas em build time. É a melhor opção
+    atual pra esse cenário, não é "rodar JS dentro do widget".
+  - iOS (se um dia acontecer): a Apple exige SwiftUI pra widgets, sem exceção
+    — não existe bridge de React Native pra isso. Não tem como fugir de Swift
+    nessa parte específica, mesmo com o app todo em React Native.
+- **React Native Web** é uma opção pra unificar o código de UI entre site e
+  app (usado em produção por apps grandes, ex. o X/Twitter novo) — mas não é
+  o ponto de partida recomendado. Começar com React puro no site e React
+  Native no app (compartilhando só os tipos/chamadas de API) é mais simples;
+  migrar pra RN Web depois é uma opção, não um requisito.
 
-**Autenticação — não usar usuário+senha tradicional.** Telegram não expõe senha
-pra terceiros. O caminho certo é o **Telegram Login Widget**: o usuário clica
-"Entrar com Telegram", o próprio Telegram autentica e devolve um payload
-assinado (`user_id`, nome, username, foto) pro backend validar o hash. Zero
-senha nova pra gerenciar, e o `user_id` já bate com a chave primária que o bot
-já usa (`User.user_id`) — login e dado batem automaticamente.
+### Autenticação — diferente pro site e pro app
+- **Site**: como o bot serve qualquer usuário do Telegram (não é só de uso
+  pessoal), o caminho certo é o **Telegram Login Widget** — usuário clica
+  "Entrar com Telegram", o Telegram autentica e devolve um payload assinado
+  (`user_id`, nome, username, foto) pro backend validar o hash. Zero senha
+  nova pra gerenciar, e o `user_id` já bate com `User.user_id` no banco.
+- **App/widget**: como esse app é só pra uso pessoal (sideload, sem loja), não
+  vale a pena replicar o fluxo de Login Widget — mais simples é o bot gerar um
+  **token de acesso pessoal** (ex. comando `/tokendeacesso`) vinculado ao seu
+  `user_id`, colado uma vez na configuração do app.
 
-**Estimativa por nível de ambição:**
-- MVP somente-leitura (login + ver grade/notas/faltas/frequência/calendário):
-  alguns fins de semana.
-- Paridade completa (criar/editar/apagar tudo pelo site também, igual ao bot):
-  várias semanas, part-time.
-- Design autoral + gráficos de evolução + tempo real ("muito foda"): meses —
-  é a parte mais aberta, sem teto.
+### Estimativa por nível de ambição
+- MVP somente-leitura (login + ver grade/notas/faltas/frequência/calendário),
+  só no site: alguns fins de semana.
+- Paridade completa (criar/editar/apagar tudo, igual ao bot) no site e/ou no
+  app: várias semanas, part-time — o app soma tempo extra se React
+  Native/Expo for novidade.
+- Widget Android funcionando (`react-native-android-widget`): escopo pequeno
+  uma vez que a API já existe — não precisa esperar o app inteiro ficar
+  pronto pra fazer o widget.
+- Design autoral + gráficos de evolução + iOS + tempo real ("muito foda"):
+  meses — a parte mais aberta, sem teto.
 
-**Recomendação quando retomar:** começar pelo MVP somente-leitura pra validar a
-arquitetura (API reaproveitando `services/` + Login Widget) antes de comprometer
-tempo com paridade completa ou design autoral.
+### Recomendação quando retomar
+1. API primeiro (FastAPI sobre `bot/services/`), independente de qual
+   cliente vem depois.
+2. App Android (React Native/Expo) com o essencial (ver/gerenciar
+   grade, atividades, faltas, notas) + o widget — é o que motivou a
+   conversa, então é o que traz retorno mais rápido.
+3. Site como consumidor adicional da mesma API, quando fizer sentido.
+4. iOS e unificação de UI (React Native Web) só depois de validar o resto.
 
 ## Hospedagem
 
