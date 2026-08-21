@@ -207,3 +207,24 @@ def test_check_conflict_with_existing_returns_none_without_subjects(db, user):
         db, user, "Segunda", time(19, 0), time(20, 40)
     )
     assert conflict is None
+
+
+def test_check_conflict_with_existing_excludes_own_subject(db, user):
+    subject = _make_subject(db, user, day="Segunda", start="19:00", end="20:40")
+
+    # Sem exclude_subject_id, a própria matéria "colidiria" consigo mesma.
+    conflict = subject_service.check_conflict_with_existing(
+        db, user, "Segunda", time(19, 0), time(20, 40), exclude_subject_id=subject.id
+    )
+    assert conflict is None
+
+
+def test_check_conflict_with_existing_still_detects_others_when_excluding(db, user):
+    subject = _make_subject(db, user, day="Segunda", start="19:00", end="20:40")
+    _make_subject(db, user, name="Redes", day="Segunda", start="21:00", end="22:40")
+
+    conflict = subject_service.check_conflict_with_existing(
+        db, user, "Segunda", time(21, 30), time(23, 0), exclude_subject_id=subject.id
+    )
+    assert conflict is not None
+    assert conflict.name == "Redes"

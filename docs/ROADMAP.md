@@ -51,16 +51,16 @@ Depois da correção dos bugs, implementado nesta ordem:
     catálogo). Se colidir, avisa qual matéria conflita e pede um novo
     horário de início (volta pro estado `START_TIME` da conversa).
     4 testes novos em `tests/test_subject_service.py`.
+11. Edição de horário de matéria em `/gerenciarmaterias` — a lógica de
+    conversão/validação de `start_time`/`end_time` já existia em
+    `receive_field_update` (não usada, faltavam os botões). Adicionados
+    os botões "Horário de Início"/"Horário de Término" em
+    `build_subject_edit_view`, e a edição agora passa pela mesma checagem
+    de conflito do item 10 — `check_conflict_with_existing` ganhou o
+    parâmetro `exclude_subject_id` pra a matéria não colidir consigo
+    mesma. 2 testes novos.
 
 Ver `git log` para o histórico completo de commits de cada item.
-
-## 🐛 Bugs/gaps conhecidos, ainda não corrigidos
-
-- **Edição de horário de matéria desabilitada.** `subject_handler.py` tem
-  um comentário do dev original admitindo que os botões de editar
-  `start_time`/`end_time` foram deixados de fora do menu de
-  `/gerenciarmaterias` "para não causar erros". Só dá pra editar
-  nome/professor/dia/sala/semestre/total de aulas.
 
 ## 🧭 Boa experiência de uso (médio prazo)
 

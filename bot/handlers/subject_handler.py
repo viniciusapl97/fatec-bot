@@ -274,8 +274,6 @@ def build_subject_edit_view(subject):
         room=subject.room, semestre=(subject.semestre or 'N/A'),
         total_classes=(subject.total_classes or 'N/A'),
     )
-    # A sua implementação pessoal de edição de horários e formatação irá aqui!
-    # Por enquanto, vou omitir os botões de horário para não causar erros.
     keyboard = [
         [
             InlineKeyboardButton("Nome", callback_data="editfield_name"),
@@ -284,6 +282,10 @@ def build_subject_edit_view(subject):
         [
             InlineKeyboardButton("Dia da Semana", callback_data="editfield_day_of_week"),
             InlineKeyboardButton("Sala", callback_data="editfield_room"),
+        ],
+        [
+            InlineKeyboardButton("Horário de Início", callback_data="editfield_start_time"),
+            InlineKeyboardButton("Horário de Término", callback_data="editfield_end_time"),
         ],
         [
             InlineKeyboardButton("Semestre", callback_data="editfield_semestre"),
@@ -365,6 +367,28 @@ async def receive_field_update(update: Update, context: ContextTypes.DEFAULT_TYP
             error_message = dialogs.ERROR_INVALID_NUMBER_POSITIVE
         await update.message.reply_html(error_message)
         return AWAITING_NEW_VALUE
+
+    if field_to_edit in ['start_time', 'end_time']:
+        with SessionLocal() as db:
+            current_subject = subject_service.get_subject_by_id(db, subject_id)
+            new_start = new_value if field_to_edit == 'start_time' else current_subject.start_time
+            new_end = new_value if field_to_edit == 'end_time' else current_subject.end_time
+            conflicting_subject = subject_service.check_conflict_with_existing(
+                db, current_subject.owner, current_subject.day_of_week, new_start, new_end,
+                exclude_subject_id=current_subject.id,
+            )
+        if conflicting_subject:
+            field_map = {'start_time': 'horário de início (HH:MM)', 'end_time': 'horário de término (HH:MM)'}
+            await update.message.reply_html(
+                dialogs.SUBJECT_EDIT_TIME_CONFLICT.format(
+                    subject_name=conflicting_subject.name,
+                    day_of_week=conflicting_subject.day_of_week,
+                    start_str=conflicting_subject.start_time.strftime('%H:%M'),
+                    end_str=conflicting_subject.end_time.strftime('%H:%M'),
+                    field_name=field_map[field_to_edit],
+                )
+            )
+            return AWAITING_NEW_VALUE
 
     with SessionLocal() as db:
         subject_service.update_subject(db, subject_id, {field_to_edit: new_value})

@@ -163,6 +163,11 @@ SUBJECT_EDIT_HEADER = "📝 <b>Editando: {subject_name}</b>\n\n▪️ <b>Profess
 SUBJECT_EDIT_ASK_NEW_VALUE = "Por favor, envie o novo valor para <b>{field_name}</b>:"
 SUBJECT_EDIT_ASK_TOTAL_CLASSES = "Quantas aulas dessa matéria estão previstas no semestre? Envie o número, ou 'remover' para apagar essa informação."
 SUBJECT_EDIT_DAY_KEYBOARD = "Por favor, escolha o novo dia da semana:"
+SUBJECT_EDIT_TIME_CONFLICT = (
+    "⚠️ Esse horário conflita com a matéria <b>{subject_name}</b> ({day_of_week}, das {start_str} às {end_str}) "
+    "que você já tem cadastrada.\n\n"
+    "Por favor, envie um novo valor para <b>{field_name}</b>."
+)
 SUBJECT_EDIT_SUCCESS = "✅ Campo atualizado com sucesso!"
 SUBJECT_DELETE_CONFIRM = "⚠️ <b>ATENÇÃO:</b>\nTem certeza que deseja excluir a matéria <b>{subject_name}</b>? Esta ação não pode ser desfeita e apagará todas as atividades, faltas e notas associadas."
 SUBJECT_DELETE_SUCCESS = "Matéria <b>{subject_name}</b> foi excluída com sucesso."
