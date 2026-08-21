@@ -27,7 +27,7 @@ from bot.handlers.import_handler import setup_import_handler
 from bot.handlers.export_handler import export_data
 from bot.handlers.bug_report_handler import setup_bug_report_handler
 from bot.handlers.fatec_handler import setup_fatec_handler
-from bot.handlers.user_settings_handler import setup_delete_user_handler
+from bot.handlers.user_settings_handler import setup_delete_user_handler, setup_notifications_handler
 from bot.handlers.admin_handler import setup_admin_handlers
 from bot.jobs import check_deadlines_job, send_weekly_summary_job
 
@@ -71,6 +71,7 @@ async def post_init_configuration(application: Application) -> None:
         BotCommand("meuslembretes", "Lista e permite cancelar seus lembretes pendentes"),
         BotCommand("exportar", "Baixa uma cópia de todos os seus dados em JSON"),
         BotCommand("privacidade", "Mostra a política de privacidade"),
+        BotCommand("notificacoes", "Ativa ou desativa os avisos automáticos de prazo"),
     ]
     await application.bot.set_my_commands(commands)
 
@@ -149,6 +150,7 @@ def main() -> None:
     application.add_handler(setup_bug_report_handler())
     application.add_handler(setup_fatec_handler())
     application.add_handler(setup_delete_user_handler())
+    application.add_handlers(setup_notifications_handler())
     application.add_handlers(setup_admin_handlers())
     application.add_handler(setup_reminder_handler())
     application.add_handlers(setup_reminder_list_handler())

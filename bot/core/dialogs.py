@@ -75,7 +75,12 @@ HELP_TEXT = (
     "⚡ <b>Resumos Rápidos</b>\n"
     "• /hoje - Mostra um resumo das aulas e atividades do dia.\n"
     "• /semana - Lista as atividades dos próximos 7 dias.\n\n"
-    
+
+    "🔔 <b>Lembretes e Notificações</b>\n"
+    "• /lembrar - Cria um lembrete personalizado.\n"
+    "• /meuslembretes - Lista e permite cancelar seus lembretes pendentes.\n"
+    "• /notificacoes - Ativa ou desativa os avisos automáticos de prazo.\n\n"
+
     "⚙️ <b>Comandos Gerais</b>\n"
     "• /start - Mostra o menu principal.\n"
     "• /help - Mostra esta mensagem de ajuda.\n"
@@ -350,6 +355,19 @@ DELETE_DATA_WARNING = (
 )
 DELETE_DATA_CONFIRMATION_INVALID = "A confirmação está incorreta. A operação foi cancelada para sua segurança."
 DELETE_DATA_SUCCESS = "Todos os seus dados foram permanentemente removidos. Obrigado por usar o Jovis. Adeus! 👋"
+
+# =============================================================================
+# NOTIFICAÇÕES AUTOMÁTICAS DE PRAZO (/notificacoes)
+# =============================================================================
+NOTIFICATIONS_ON = "ativadas ✅"
+NOTIFICATIONS_OFF = "desativadas 🔕"
+NOTIFICATIONS_STATUS = (
+    "🔔 <b>Notificações automáticas de prazo:</b> {status}\n\n"
+    "Você recebe um aviso quando um trabalho ou prova está a 1 ou 3 dias de vencer. "
+    "Isso não afeta os lembretes que você mesmo cria com /lembrar."
+)
+NOTIFICATIONS_BUTTON_DISABLE = "🔕 Desativar"
+NOTIFICATIONS_BUTTON_ENABLE = "🔔 Ativar"
 
 
 

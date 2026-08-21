@@ -55,3 +55,14 @@ def get_upcoming_activities(db: Session, days_ahead: int) -> List[Activity]:
     """
     target_date = date.today() + timedelta(days=days_ahead)
     return db.query(Activity).filter(Activity.due_date == target_date).all()
+
+def set_notifications_enabled(db: Session, user: User, enabled: bool) -> User:
+    """Ativa ou desativa as notificações automáticas de prazo para o usuário."""
+    user.notifications_enabled = enabled
+    db.commit()
+    db.refresh(user)
+    return user
+
+def get_user_ids_with_notifications_disabled(db: Session) -> set[int]:
+    """Retorna o conjunto de user_id que desativaram as notificações automáticas de prazo."""
+    return {row[0] for row in db.query(User.user_id).filter(User.notifications_enabled == False).all()}

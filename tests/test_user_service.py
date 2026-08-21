@@ -74,3 +74,26 @@ def test_get_upcoming_activities_filters_by_exact_days_ahead(db, user):
     assert [a.name for a in due_tomorrow] == ["P1"]
     assert [a.name for a in due_in_three_days] == ["P2"]
     assert due_in_four_days == []
+
+
+def test_new_user_has_notifications_enabled_by_default(db, user):
+    assert user.notifications_enabled is True
+
+
+def test_set_notifications_enabled_toggles_and_persists(db, user):
+    user_service.set_notifications_enabled(db, user, False)
+    assert user.notifications_enabled is False
+
+    reloaded = user_service.get_user_by_telegram_id(db, user.user_id)
+    assert reloaded.notifications_enabled is False
+
+    user_service.set_notifications_enabled(db, user, True)
+    assert user.notifications_enabled is True
+
+
+def test_get_user_ids_with_notifications_disabled(db, user):
+    other_user, _ = user_service.get_or_create_user(db, 999, "Outro", "outro")
+    user_service.set_notifications_enabled(db, other_user, False)
+
+    disabled = user_service.get_user_ids_with_notifications_disabled(db)
+    assert disabled == {other_user.user_id}

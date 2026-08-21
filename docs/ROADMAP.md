@@ -66,12 +66,24 @@ Depois da correção dos bugs, implementado nesta ordem:
     pra cada usuário cadastrado o mesmo resumo do `/semana`. Extraído
     `build_week_summary_message(db, user)` de `common.py` pra ser
     reaproveitado tanto pelo comando quanto pelo job.
+13. `/notificacoes` — liga/desliga os avisos automáticos de prazo por
+    usuário (`User.notifications_enabled`, default `True`). Comando +
+    botão de alternância; `check_deadlines_job` pula quem desativou via
+    `user_service.get_user_ids_with_notifications_disabled`. **Bônus: ao
+    testar isso encontrei e corrigi um bug real e pré-existente** —
+    `check_deadlines_job` chamava `activity_service.get_upcoming_activities`,
+    mas essa função sempre esteve definida em `user_service.py`, não em
+    `activity_service.py`. Ou seja, o job diário de lembretes de prazo
+    vinha estourando `AttributeError` (e sendo engolido pelo
+    APScheduler) toda vez que rodava — os lembretes de "vence amanhã" /
+    "vence em 3 dias" nunca tinham sido entregues de verdade em
+    produção. Corrigido trocando a chamada para `user_service.get_upcoming_activities`.
+    3 testes novos em `tests/test_user_service.py`.
 
 Ver `git log` para o histórico completo de commits de cada item.
 
 ## 🧭 Boa experiência de uso (médio prazo)
 
-- Silenciar notificações automáticas de prazo (`/notificacoes on|off`).
 - Sincronizar provas/trabalhos com o calendário do celular (exportar
   `.ics`).
 

@@ -5,7 +5,7 @@ from collections import defaultdict
 from telegram.ext import ContextTypes
 
 from bot.db.base import SessionLocal
-from bot.services import activity_service, user_service
+from bot.services import user_service
 from bot.core import dialogs
 from bot.handlers.common import build_week_summary_message
 
@@ -18,10 +18,10 @@ async def check_deadlines_job(context: ContextTypes.DEFAULT_TYPE):
     logger.info("Executando a tarefa de verificação de prazos (check_deadlines_job)...")
     
     reminders_to_send = defaultdict(list)
-    
+
     with SessionLocal() as db:
         # Busca atividades para amanhã (1 dia de antecedência)
-        activities_tomorrow = activity_service.get_upcoming_activities(db, days_ahead=1)
+        activities_tomorrow = user_service.get_upcoming_activities(db, days_ahead=1)
         for activity in activities_tomorrow:
             reminders_to_send[activity.user_id].append(
                 dialogs.REMINDER_AUTOMATIC_TOMORROW.format(
@@ -30,9 +30,9 @@ async def check_deadlines_job(context: ContextTypes.DEFAULT_TYPE):
                     subject_name=activity.subject.name
                 )
             )
-            
+
         # Busca atividades para daqui a 3 dias
-        activities_in_3_days = activity_service.get_upcoming_activities(db, days_ahead=3)
+        activities_in_3_days = user_service.get_upcoming_activities(db, days_ahead=3)
         for activity in activities_in_3_days:
             reminders_to_send[activity.user_id].append(
                 dialogs.REMINDER_AUTOMATIC_3_DAYS.format(
@@ -42,8 +42,12 @@ async def check_deadlines_job(context: ContextTypes.DEFAULT_TYPE):
                 )
             )
 
-    # Envia os lembretes agrupados por usuário
+        disabled_user_ids = user_service.get_user_ids_with_notifications_disabled(db)
+
+    # Envia os lembretes agrupados por usuário (pulando quem desativou em /notificacoes)
     for user_id, messages in reminders_to_send.items():
+        if user_id in disabled_user_ids:
+            continue
         full_message = dialogs.REMINDER_AUTOMATIC_HEADER + "\n\n".join(messages)
         try:
             await context.bot.send_message(chat_id=user_id, text=full_message, parse_mode='HTML')

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, BigInteger, ForeignKey, Date, Numeric, Time, DateTime
+from sqlalchemy import Column, Integer, String, BigInteger, Boolean, ForeignKey, Date, Numeric, Time, DateTime
 from sqlalchemy.orm import relationship
 from .base import Base
 
@@ -9,10 +9,11 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(BigInteger, unique=True, nullable=False, index=True) 
+    user_id = Column(BigInteger, unique=True, nullable=False, index=True)
     first_name = Column(String, nullable=False)
     username = Column(String, nullable=True)
-    
+    notifications_enabled = Column(Boolean, default=True, nullable=False)
+
     # Relações
     subjects = relationship("Subject", back_populates="owner", cascade="all, delete-orphan")
     activities = relationship("Activity", back_populates="owner", cascade="all, delete-orphan")

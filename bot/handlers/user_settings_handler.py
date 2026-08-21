@@ -1,9 +1,10 @@
 import logging
-from telegram import Update
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ContextTypes,
     ConversationHandler,
     CommandHandler,
+    CallbackQueryHandler,
     MessageHandler,
     filters,
     TypeHandler,
@@ -51,6 +52,52 @@ async def delete_data_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await update.message.reply_text(dialogs.OPERATION_CANCELED)
     context.user_data.clear()
     return ConversationHandler.END
+
+
+# =============================================================================
+# Notificações automáticas de prazo (/notificacoes)
+# =============================================================================
+
+def _build_notifications_view(enabled: bool):
+    """Monta o texto e o botão de alternância pro status das notificações."""
+    status = dialogs.NOTIFICATIONS_ON if enabled else dialogs.NOTIFICATIONS_OFF
+    text = dialogs.NOTIFICATIONS_STATUS.format(status=status)
+    button_text = dialogs.NOTIFICATIONS_BUTTON_DISABLE if enabled else dialogs.NOTIFICATIONS_BUTTON_ENABLE
+    keyboard = [[InlineKeyboardButton(button_text, callback_data="toggle_notifications")]]
+    return text, InlineKeyboardMarkup(keyboard)
+
+
+async def notifications_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Mostra se as notificações automáticas de prazo estão ativadas, com botão pra alternar."""
+    telegram_user = update.effective_user
+
+    with SessionLocal() as db:
+        user, _ = user_service.get_or_create_user(db, telegram_user.id, telegram_user.first_name, telegram_user.username)
+        text, reply_markup = _build_notifications_view(user.notifications_enabled)
+
+    await update.message.reply_html(text, reply_markup=reply_markup)
+
+
+async def toggle_notifications_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Alterna o status das notificações automáticas de prazo."""
+    query = update.callback_query
+    await query.answer()
+    telegram_user = query.from_user
+
+    with SessionLocal() as db:
+        user, _ = user_service.get_or_create_user(db, telegram_user.id, telegram_user.first_name, telegram_user.username)
+        user_service.set_notifications_enabled(db, user, not user.notifications_enabled)
+        text, reply_markup = _build_notifications_view(user.notifications_enabled)
+
+    await query.edit_message_text(text, reply_markup=reply_markup, parse_mode='HTML')
+
+
+def setup_notifications_handler() -> list:
+    """Cria os handlers (comando + callback) para /notificacoes."""
+    return [
+        CommandHandler("notificacoes", notifications_status),
+        CallbackQueryHandler(toggle_notifications_callback, pattern="^toggle_notifications$"),
+    ]
 
 
 def setup_delete_user_handler() -> ConversationHandler:
