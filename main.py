@@ -7,10 +7,11 @@ from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
     CallbackQueryHandler,
+    Defaults,
 )
 from datetime import time
 
-from bot.core.settings import TELEGRAM_TOKEN
+from bot.core.settings import TELEGRAM_TOKEN, TIMEZONE
 from bot.db.base import Base, engine
 from bot.db import models
 
@@ -76,7 +77,14 @@ def main() -> None:
     Base.metadata.create_all(bind=engine)
     logger.info("Tabelas verificadas/criadas com sucesso.")
 
-    application = ApplicationBuilder().token(TELEGRAM_TOKEN).post_init(post_init_configuration).build()
+    defaults = Defaults(tzinfo=TIMEZONE)
+    application = (
+        ApplicationBuilder()
+        .token(TELEGRAM_TOKEN)
+        .defaults(defaults)
+        .post_init(post_init_configuration)
+        .build()
+    )
 
 
 

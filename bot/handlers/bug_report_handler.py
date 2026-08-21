@@ -4,11 +4,12 @@ import logging
 from telegram import Update
 from telegram.ext import (
     ContextTypes, ConversationHandler, CommandHandler,
-    MessageHandler, filters
+    MessageHandler, filters, TypeHandler
 )
 
 from bot.services import email_service
 from bot.core import dialogs
+from bot.core.conversation_timeout import CONVERSATION_TIMEOUT_SECONDS, notify_conversation_timeout
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +78,8 @@ def setup_bug_report_handler() -> ConversationHandler:
         states={
             AWAITING_SCREENSHOT: [MessageHandler(filters.PHOTO, received_screenshot)],
             AWAITING_DESCRIPTION: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_description)],
+            ConversationHandler.TIMEOUT: [TypeHandler(Update, notify_conversation_timeout)],
         },
         fallbacks=[CommandHandler("cancelar", bug_report_cancel)],
+        conversation_timeout=CONVERSATION_TIMEOUT_SECONDS,
     )

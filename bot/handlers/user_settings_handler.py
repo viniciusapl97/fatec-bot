@@ -6,11 +6,13 @@ from telegram.ext import (
     CommandHandler,
     MessageHandler,
     filters,
+    TypeHandler,
 )
 
 from bot.db.base import SessionLocal
 from bot.services import user_service
 from bot.core import dialogs
+from bot.core.conversation_timeout import CONVERSATION_TIMEOUT_SECONDS, notify_conversation_timeout
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +58,9 @@ def setup_delete_user_handler() -> ConversationHandler:
     return ConversationHandler(
         entry_points=[CommandHandler("deletardados", delete_data_start)],
         states={
-            AWAITING_CONFIRMATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, confirm_data_deletion)]
+            AWAITING_CONFIRMATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, confirm_data_deletion)],
+            ConversationHandler.TIMEOUT: [TypeHandler(Update, notify_conversation_timeout)],
         },
         fallbacks=[CommandHandler("cancelar", delete_data_cancel)],
+        conversation_timeout=CONVERSATION_TIMEOUT_SECONDS,
     )

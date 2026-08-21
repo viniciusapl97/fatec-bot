@@ -8,11 +8,13 @@ from telegram.ext import (
     MessageHandler,
     filters,
     CallbackQueryHandler,
+    TypeHandler,
 )
 
 from bot.db.base import SessionLocal
 from bot.services import user_service, subject_service, activity_service
 from bot.core import dialogs
+from bot.core.conversation_timeout import CONVERSATION_TIMEOUT_SECONDS, notify_conversation_timeout
 
 logger = logging.getLogger(__name__)
 
@@ -132,8 +134,10 @@ def setup_activity_handler() -> ConversationHandler:
             A_SUBJECT: [CallbackQueryHandler(received_activity_subject, pattern="^link_subject_")],
             A_DUEDATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_activity_due_date)],
             A_NOTES: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_activity_notes)],
+            ConversationHandler.TIMEOUT: [TypeHandler(Update, notify_conversation_timeout)],
         },
         fallbacks=[CommandHandler("cancelar", activity_cancel)],
+        conversation_timeout=CONVERSATION_TIMEOUT_SECONDS,
     )
     
     
@@ -366,9 +370,11 @@ def setup_activity_management_handler() -> ConversationHandler:
                 CallbackQueryHandler(confirm_activity_delete_callback, pattern="^confirmdelete_activity_"),
                 CallbackQueryHandler(select_activity_action_callback, pattern="^mng_act_"),
             ],
+            ConversationHandler.TIMEOUT: [TypeHandler(Update, notify_conversation_timeout)],
         },
         fallbacks=[CommandHandler("cancelar", activity_cancel)],
         per_message=False,
+        conversation_timeout=CONVERSATION_TIMEOUT_SECONDS,
     )
     
     

@@ -7,8 +7,11 @@ from telegram.ext import (
     CommandHandler,
     MessageHandler,
     filters,
+    TypeHandler,
 )
 from bot.core import dialogs
+from bot.core.settings import TIMEZONE_NAME
+from bot.core.conversation_timeout import CONVERSATION_TIMEOUT_SECONDS, notify_conversation_timeout
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +32,15 @@ async def received_reminder_time(update: Update, context: ContextTypes.DEFAULT_T
     """Recebe o horário, agenda a tarefa e finaliza."""
     time_text = update.message.text
     
-    reminder_datetime = dateparser.parse(time_text, languages=['pt'])
+    reminder_datetime = dateparser.parse(
+        time_text,
+        languages=['pt'],
+        settings={
+            'TIMEZONE': TIMEZONE_NAME,
+            'TO_TIMEZONE': TIMEZONE_NAME,
+            'RETURN_AS_TIMEZONE_AWARE': True,
+        },
+    )
     
     if not reminder_datetime:
         await update.message.reply_text(dialogs.REMINDER_CUSTOM_ERROR_TIME)
@@ -70,6 +81,8 @@ def setup_reminder_handler() -> ConversationHandler:
         states={
             AWAITING_MESSAGE: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_reminder_message)],
             AWAITING_TIME: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_reminder_time)],
+            ConversationHandler.TIMEOUT: [TypeHandler(Update, notify_conversation_timeout)],
         },
         fallbacks=[CommandHandler("cancelar", reminder_cancel)],
+        conversation_timeout=CONVERSATION_TIMEOUT_SECONDS,
     )

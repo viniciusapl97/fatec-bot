@@ -9,11 +9,13 @@ from telegram.ext import (
     MessageHandler,
     filters,
     CallbackQueryHandler,
+    TypeHandler,
 )
 
 from bot.db.base import SessionLocal
 from bot.services import user_service
 from bot.core import dialogs
+from bot.core.conversation_timeout import CONVERSATION_TIMEOUT_SECONDS, notify_conversation_timeout
 from bot.decorators import admin_only # Importamos nosso decorador de segurança
 
 logger = logging.getLogger(__name__)
@@ -153,8 +155,10 @@ def setup_admin_handlers() -> list:
         states={
             AWAITING_MESSAGE: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_message)],
             AWAITING_CONFIRMATION: [CallbackQueryHandler(send_broadcast)],
+            ConversationHandler.TIMEOUT: [TypeHandler(Update, notify_conversation_timeout)],
         },
         fallbacks=[CommandHandler("cancelar", broadcast_cancel)],
+        conversation_timeout=CONVERSATION_TIMEOUT_SECONDS,
     )
 
     send_to_user_handler = CommandHandler("enviar", send_to_user)

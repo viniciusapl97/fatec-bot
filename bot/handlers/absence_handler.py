@@ -8,11 +8,13 @@ from telegram.ext import (
     MessageHandler,
     filters,
     CallbackQueryHandler,
+    TypeHandler,
 )
 
 from bot.db.base import SessionLocal
 from bot.services import user_service, subject_service, absence_service
 from bot.core import dialogs
+from bot.core.conversation_timeout import CONVERSATION_TIMEOUT_SECONDS, notify_conversation_timeout
 
 logger = logging.getLogger(__name__)
 
@@ -327,9 +329,11 @@ def setup_absence_handler() -> ConversationHandler:
             ],
             GET_ABSENCE_QUANTITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_absence_quantity)],
             GET_ABSENCE_NOTES: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_absence_notes)],
+            ConversationHandler.TIMEOUT: [TypeHandler(Update, notify_conversation_timeout)],
         },
         fallbacks=[CommandHandler("cancelar", absence_cancel)],
-        per_message=False
+        per_message=False,
+        conversation_timeout=CONVERSATION_TIMEOUT_SECONDS,
     )
 
 def setup_absence_management_handler() -> ConversationHandler:
@@ -345,9 +349,11 @@ def setup_absence_management_handler() -> ConversationHandler:
             AWAITING_ACTION_CHOICE: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_action_choice)],
             AWAITING_NEW_QUANTITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_new_quantity)],
             CONFIRM_DELETE: [MessageHandler(filters.TEXT & ~filters.COMMAND, confirm_text_delete)],
+            ConversationHandler.TIMEOUT: [TypeHandler(Update, notify_conversation_timeout)],
         },
         fallbacks=[CommandHandler("cancelar", absence_cancel)],
         per_message=False,
+        conversation_timeout=CONVERSATION_TIMEOUT_SECONDS,
     )
     
     

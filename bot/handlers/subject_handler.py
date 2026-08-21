@@ -15,11 +15,13 @@ from telegram.ext import (
     MessageHandler,
     filters,
     CallbackQueryHandler,
+    TypeHandler,
 )
 
 from bot.db.base import SessionLocal
 from bot.services import user_service, subject_service, grade_service, activity_service
 from bot.core import dialogs
+from bot.core.conversation_timeout import CONVERSATION_TIMEOUT_SECONDS, notify_conversation_timeout
 
 logger = logging.getLogger(__name__)
 
@@ -466,9 +468,11 @@ def setup_subject_handler() -> ConversationHandler:
             START_TIME: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_start_time)],
             END_TIME: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_end_time)],
             SEMESTER: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_semester)],
+            ConversationHandler.TIMEOUT: [TypeHandler(Update, notify_conversation_timeout)],
         },
         fallbacks=[CommandHandler("cancelar", cancel)],
         per_message=False,
+        conversation_timeout=CONVERSATION_TIMEOUT_SECONDS,
     )
 
 def setup_management_handler() -> ConversationHandler:
@@ -495,17 +499,21 @@ def setup_management_handler() -> ConversationHandler:
                 CallbackQueryHandler(confirm_delete_callback, pattern="^confirmdelete_"),
                 CallbackQueryHandler(select_action_callback, pattern="^manage_")
             ],
+            ConversationHandler.TIMEOUT: [TypeHandler(Update, notify_conversation_timeout)],
         },
         fallbacks=[CommandHandler("cancelar", manage_cancel)],
         per_message=False,
+        conversation_timeout=CONVERSATION_TIMEOUT_SECONDS,
     )
 
 def setup_report_handler() -> ConversationHandler:
     return ConversationHandler(
         entry_points=[CommandHandler("relatorio", report_start)],
         states={
-            SELECT_SUBJECT_FOR_REPORT: [CallbackQueryHandler(show_report, pattern="^report_subject_")]
+            SELECT_SUBJECT_FOR_REPORT: [CallbackQueryHandler(show_report, pattern="^report_subject_")],
+            ConversationHandler.TIMEOUT: [TypeHandler(Update, notify_conversation_timeout)],
         },
         fallbacks=[CommandHandler("cancelar", cancel)],
         per_message=False,
+        conversation_timeout=CONVERSATION_TIMEOUT_SECONDS,
     )

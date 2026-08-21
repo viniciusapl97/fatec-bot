@@ -8,11 +8,13 @@ from telegram.ext import (
     MessageHandler,
     filters,
     CallbackQueryHandler,
+    TypeHandler,
 )
 
 from bot.db.base import SessionLocal
 from bot.services import user_service, subject_service, grade_service
 from bot.core import dialogs
+from bot.core.conversation_timeout import CONVERSATION_TIMEOUT_SECONDS, notify_conversation_timeout
 
 logger = logging.getLogger(__name__)
 
@@ -289,9 +291,11 @@ def setup_grade_handler() -> ConversationHandler:
             SELECT_GRADE_SUBJECT: [CallbackQueryHandler(received_grade_subject, pattern="^grade_subject_")],
             SELECT_GRADE_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_grade_name)],
             SELECT_GRADE_VALUE: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_grade_value)],
+            ConversationHandler.TIMEOUT: [TypeHandler(Update, notify_conversation_timeout)],
         },
         fallbacks=[CommandHandler("cancelar", grade_cancel)],
-        per_message=False
+        per_message=False,
+        conversation_timeout=CONVERSATION_TIMEOUT_SECONDS,
     )
 
 
@@ -314,7 +318,9 @@ def setup_grade_management_handler() -> ConversationHandler:
             ],
             AWAIT_NEW_GRADE_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_new_grade_name)],
             AWAIT_NEW_GRADE_VALUE: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_new_grade_value)],
+            ConversationHandler.TIMEOUT: [TypeHandler(Update, notify_conversation_timeout)],
         },
         fallbacks=[CommandHandler("cancelar", grade_cancel)],
         per_message=False,
+        conversation_timeout=CONVERSATION_TIMEOUT_SECONDS,
     )

@@ -4,12 +4,13 @@ import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ContextTypes, ConversationHandler, CommandHandler,
-    MessageHandler, filters, CallbackQueryHandler,
+    MessageHandler, filters, CallbackQueryHandler, TypeHandler,
 )
 
 from bot.db.base import SessionLocal
 from bot.services import user_service, subject_service, course_service
 from bot.core import dialogs
+from bot.core.conversation_timeout import CONVERSATION_TIMEOUT_SECONDS, notify_conversation_timeout
 
 logger = logging.getLogger(__name__)
 
@@ -235,6 +236,8 @@ def setup_fatec_handler() -> ConversationHandler:
             ],
             CUSTOM_IDS: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_custom_ids)],
             CUSTOM_SEMESTER: [MessageHandler(filters.TEXT & ~filters.COMMAND, register_custom_grade)],
+            ConversationHandler.TIMEOUT: [TypeHandler(Update, notify_conversation_timeout)],
         },
         fallbacks=[CommandHandler("cancelar", fatec_cancel)], # Use a função correta de cancelamento
+        conversation_timeout=CONVERSATION_TIMEOUT_SECONDS,
     )

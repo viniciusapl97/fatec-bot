@@ -16,6 +16,7 @@ WELCOME_NEW = (
 )
 WELCOME_BACK = "Olá de volta, {first_name}! 👋\n\nO que temos pra hoje?"
 OPERATION_CANCELED = "Operação cancelada."
+CONVERSATION_TIMEOUT = "⏱️ Essa operação foi cancelada automaticamente por inatividade. Envie o comando novamente quando quiser continuar."
 BACK_TO_MAIN_MENU_PROMPT = "« Voltar ao Menu Principal"
 SEPARATOR = "—" * 20 + "\n"
 

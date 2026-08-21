@@ -1,4 +1,5 @@
 import os
+from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -7,6 +8,12 @@ load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 if not TELEGRAM_TOKEN:
     raise ValueError("Variável de ambiente TELEGRAM_TOKEN não encontrada.")
+
+# --- Fuso horário ---
+# Usado para agendar tarefas (lembretes automáticos, /lembrar) no horário local
+# da Fatec S.B. em vez de UTC (padrão do python-telegram-bot).
+TIMEZONE_NAME = os.getenv("TIMEZONE_NAME", "America/Sao_Paulo")
+TIMEZONE = ZoneInfo(TIMEZONE_NAME)
 
 # --- Configurações do Banco de Dados (PostgreSQL) ---
 # Lógica flexível: Se a DATABASE_URL existe, use-a.

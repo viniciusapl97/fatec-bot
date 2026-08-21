@@ -5,12 +5,13 @@ import json
 from telegram import Update
 from telegram.ext import (
     ContextTypes, ConversationHandler, CommandHandler,
-    MessageHandler, filters
+    MessageHandler, filters, TypeHandler
 )
 
 from bot.db.base import SessionLocal
 from bot.services import user_service, subject_service
 from bot.core import dialogs
+from bot.core.conversation_timeout import CONVERSATION_TIMEOUT_SECONDS, notify_conversation_timeout
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +102,9 @@ def setup_import_handler() -> ConversationHandler:
     return ConversationHandler(
         entry_points=[CommandHandler("import", import_start)],
         states={
-            AWAITING_FILE: [MessageHandler(filters.Document.FileExtension("json"), received_json_file)]
+            AWAITING_FILE: [MessageHandler(filters.Document.FileExtension("json"), received_json_file)],
+            ConversationHandler.TIMEOUT: [TypeHandler(Update, notify_conversation_timeout)],
         },
         fallbacks=[CommandHandler("cancelar", import_cancel)],
+        conversation_timeout=CONVERSATION_TIMEOUT_SECONDS,
     )
