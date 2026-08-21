@@ -1,4 +1,6 @@
 import logging
+from datetime import datetime
+
 import dateparser
 from telegram import Update
 from telegram.ext import (
@@ -6,9 +8,12 @@ from telegram.ext import (
     ConversationHandler,
     CommandHandler,
     MessageHandler,
+    JobQueue,
     filters,
     TypeHandler,
 )
+from bot.db.base import SessionLocal
+from bot.services import user_service, reminder_service
 from bot.core import dialogs
 from bot.core.settings import TIMEZONE_NAME
 from bot.core.conversation_timeout import CONVERSATION_TIMEOUT_SECONDS, notify_conversation_timeout
@@ -16,6 +21,35 @@ from bot.core.conversation_timeout import CONVERSATION_TIMEOUT_SECONDS, notify_c
 logger = logging.getLogger(__name__)
 
 AWAITING_MESSAGE, AWAITING_TIME = range(2)
+
+
+async def _deliver_reminder(context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Callback do job_queue: entrega o lembrete e remove seu registro do banco."""
+    job_data = context.job.data
+    reminder_id = job_data['reminder_id']
+    user_id = job_data['user_id']
+    reminder_message = job_data['reminder_message']
+
+    try:
+        await context.bot.send_message(
+            chat_id=user_id,
+            text=dialogs.REMINDER_CUSTOM_NOTIFICATION.format(reminder_message=reminder_message)
+        )
+    except Exception as e:
+        logger.error(f"Não foi possível entregar o lembrete {reminder_id} para o usuário {user_id}: {e}")
+
+    with SessionLocal() as db:
+        reminder_service.delete_reminder_by_id(db, reminder_id)
+
+
+def schedule_reminder(job_queue: JobQueue, reminder_id: int, user_id: int, message: str, when: datetime) -> None:
+    """Agenda a entrega de um lembrete já persistido no banco."""
+    job_queue.run_once(
+        _deliver_reminder,
+        when,
+        data={'reminder_id': reminder_id, 'user_id': user_id, 'reminder_message': message},
+        name=f"reminder_{reminder_id}",
+    )
 
 async def reminder_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Inicia a conversa para criar um lembrete personalizado."""
@@ -47,16 +81,15 @@ async def received_reminder_time(update: Update, context: ContextTypes.DEFAULT_T
         return AWAITING_TIME
 
     reminder_message = context.user_data['reminder_message']
-    user_id = update.effective_user.id
-    
-    async def send_reminder(context: ContextTypes.DEFAULT_TYPE):
-        await context.bot.send_message(
-            chat_id=user_id, 
-            text=dialogs.REMINDER_CUSTOM_NOTIFICATION.format(reminder_message=reminder_message)
-        )
+    telegram_user = update.effective_user
 
-    context.job_queue.run_once(send_reminder, reminder_datetime)
-    
+    with SessionLocal() as db:
+        user, _ = user_service.get_or_create_user(db, telegram_user.id, telegram_user.first_name, telegram_user.username)
+        reminder = reminder_service.create_reminder(db, user, reminder_message, reminder_datetime)
+        reminder_id = reminder.id
+
+    schedule_reminder(context.job_queue, reminder_id, telegram_user.id, reminder_message, reminder_datetime)
+
     await update.message.reply_html(
         dialogs.REMINDER_CUSTOM_SUCCESS.format(
             reminder_message=reminder_message,

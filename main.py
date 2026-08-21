@@ -12,12 +12,13 @@ from telegram.ext import (
 from datetime import time
 
 from bot.core.settings import TELEGRAM_TOKEN, TIMEZONE
-from bot.db.base import Base, engine
+from bot.db.base import Base, engine, SessionLocal
 from bot.db import models
+from bot.services import reminder_service
 
 # Importa todas as funções e setups de handlers
 from bot.handlers.common import start, help_command, button_handler, today_command, week_command
-from bot.handlers.reminder_handler import setup_reminder_handler
+from bot.handlers.reminder_handler import setup_reminder_handler, schedule_reminder
 from bot.handlers.subject_handler import list_subjects, setup_subject_handler, setup_management_handler, setup_report_handler
 from bot.handlers.activity_handler import list_activities, setup_activity_handler, setup_activity_management_handler
 from bot.handlers.absence_handler import setup_absence_handler, setup_absence_management_handler, report_absences
@@ -70,6 +71,26 @@ async def post_init_configuration(application: Application) -> None:
     await application.bot.set_my_commands(commands)
 
 
+def reschedule_pending_reminders(application: Application) -> None:
+    """
+    Reagenda no job_queue os lembretes personalizados (/lembrar) que ainda não
+    foram entregues. Necessário porque os jobs agendados vivem só em memória
+    e são perdidos toda vez que o bot reinicia.
+    """
+    with SessionLocal() as db:
+        pending_reminders = reminder_service.get_pending_reminders(db)
+        for reminder in pending_reminders:
+            schedule_reminder(
+                application.job_queue,
+                reminder.id,
+                reminder.user_id,
+                reminder.message,
+                reminder.remind_at,
+            )
+    if pending_reminders:
+        logger.info("Reagendados %d lembrete(s) pendente(s).", len(pending_reminders))
+
+
 def main() -> None:
     """Inicia o bot e o mantém rodando."""
 
@@ -92,8 +113,10 @@ def main() -> None:
     job_queue = application.job_queue
     # Agenda a tarefa para rodar todo dia às 09:00 da manhã
     job_queue.run_daily(check_deadlines_job, time=time(hour=9, minute=0), name="check_deadlines_daily")
-    
-    
+    # Reagenda lembretes personalizados que ficaram pendentes de um restart anterior
+    reschedule_pending_reminders(application)
+
+
     # --- Registra os Handlers de Comando ---
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))

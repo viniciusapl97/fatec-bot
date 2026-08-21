@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, BigInteger, ForeignKey, Date, Numeric, Time
+from sqlalchemy import Column, Integer, String, BigInteger, ForeignKey, Date, Numeric, Time, DateTime
 from sqlalchemy.orm import relationship
 from .base import Base
 
@@ -18,6 +18,7 @@ class User(Base):
     activities = relationship("Activity", back_populates="owner", cascade="all, delete-orphan")
     absences = relationship("Absence", back_populates="owner", cascade="all, delete-orphan")
     grades = relationship("Grade", back_populates="owner", cascade="all, delete-orphan")
+    reminders = relationship("Reminder", back_populates="owner", cascade="all, delete-orphan")
 
 class Subject(Base):
     __tablename__ = "subjects"
@@ -89,6 +90,21 @@ class Grade(Base):
     subject = relationship("Subject", back_populates="grades")
     
     
+class Reminder(Base):
+    """
+    Modelo que representa um lembrete personalizado (/lembrar) ainda não entregue.
+    O registro é removido assim que o lembrete é enviado ao usuário.
+    """
+    __tablename__ = "reminders"
+
+    id = Column(Integer, primary_key=True, index=True)
+    message = Column(String, nullable=False)
+    remind_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    user_id = Column(BigInteger, ForeignKey("users.user_id"), nullable=False)
+
+    owner = relationship("User", back_populates="reminders")
+
+
 class CourseSubject(Base):
     """
     Modelo que representa uma matéria no catálogo mestre de um curso.
