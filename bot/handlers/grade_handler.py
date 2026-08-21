@@ -150,6 +150,17 @@ async def manage_grades_start(update: Update, context: ContextTypes.DEFAULT_TYPE
     return SELECT_SUBJECT_TO_MANAGE
 
 
+def build_grades_list_view(subject, grades):
+    """Monta o texto e o teclado da lista de notas de uma matéria."""
+    message = dialogs.GRADE_MANAGE_LIST_HEADER.format(subject_name=subject.name)
+    message += "".join(f" • <b>{g.name}:</b> {g.value:.2f}\n" for g in grades)
+    keyboard = [
+        [InlineKeyboardButton(f"Editar / Excluir: {g.name}", callback_data=f"select_grade_{g.id}")]
+        for g in grades
+    ]
+    return message, InlineKeyboardMarkup(keyboard)
+
+
 async def list_grades_for_subject(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     query = update.callback_query
     await query.answer()
@@ -167,17 +178,8 @@ async def list_grades_for_subject(update: Update, context: ContextTypes.DEFAULT_
         )
         return ConversationHandler.END
 
-    message = dialogs.GRADE_MANAGE_LIST_HEADER.format(subject_name=subject.name)
-    message += "".join(f" • <b>{g.name}:</b> {g.value:.2f}\n" for g in grades)
-    keyboard = [
-        [InlineKeyboardButton(f"Editar / Excluir: {g.name}", callback_data=f"select_grade_{g.id}")]
-        for g in grades
-    ]
-    await query.edit_message_text(
-        message,
-        reply_markup=InlineKeyboardMarkup(keyboard),
-        parse_mode="HTML"
-    )
+    message, reply_markup = build_grades_list_view(subject, grades)
+    await query.edit_message_text(message, reply_markup=reply_markup, parse_mode="HTML")
     return LIST_GRADES
 
 
@@ -240,15 +242,17 @@ async def received_new_grade_value(update: Update, context: ContextTypes.DEFAULT
 
     with SessionLocal() as db:
         grade_service.update_grade(db, grade_id, new_name, new_val)
+        subject = subject_service.get_subject_by_id(db, subject_id)
+        grades = grade_service.get_grades_by_subject(db, subject)
 
     await update.message.reply_text(dialogs.GRADE_EDIT_SUCCESS)
 
-    # LÓGICA DE RECARREGAMENTO (SEM 'fake_update')
-    # Prepara os dados e chama a função que lista as notas novamente
-    query_data = f"mng_grade_subj_{subject_id}"
-    update.callback_query = type('CallbackQuery', (), {'data': query_data, 'answer': (lambda: None), 'message': update.message, 'from_user': update.effective_user})()
-    
-    return await list_grades_for_subject(update, context)
+    if not grades:
+        return ConversationHandler.END
+
+    message, reply_markup = build_grades_list_view(subject, grades)
+    await update.message.reply_text(message, reply_markup=reply_markup, parse_mode="HTML")
+    return LIST_GRADES
 
 async def confirm_delete_grade(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     query = update.callback_query
@@ -258,10 +262,17 @@ async def confirm_delete_grade(update: Update, context: ContextTypes.DEFAULT_TYP
 
     with SessionLocal() as db:
         grade_service.delete_grade_by_id(db, gid)
+        subject = subject_service.get_subject_by_id(db, subj_id)
+        grades = grade_service.get_grades_by_subject(db, subject)
 
     await query.edit_message_text(dialogs.GRADE_DELETE_SUCCESS)
-    query.data = f"mng_grade_subj_{subj_id}"
-    return await list_grades_for_subject(update, context)
+
+    if not grades:
+        return ConversationHandler.END
+
+    message, reply_markup = build_grades_list_view(subject, grades)
+    await query.message.reply_text(message, reply_markup=reply_markup, parse_mode="HTML")
+    return LIST_GRADES
 
 
 # =============================================================================

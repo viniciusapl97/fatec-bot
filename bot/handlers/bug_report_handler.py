@@ -64,6 +64,13 @@ async def received_description(update: Update, context: ContextTypes.DEFAULT_TYP
     context.user_data.clear()
     return ConversationHandler.END
 
+async def bug_report_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Cancela o fluxo de relatório de bug."""
+    await update.message.reply_text(dialogs.OPERATION_CANCELED)
+    context.user_data.clear()
+    return ConversationHandler.END
+
+
 def setup_bug_report_handler() -> ConversationHandler:
     return ConversationHandler(
         entry_points=[CommandHandler("bug", bug_report_start)],
@@ -71,5 +78,5 @@ def setup_bug_report_handler() -> ConversationHandler:
             AWAITING_SCREENSHOT: [MessageHandler(filters.PHOTO, received_screenshot)],
             AWAITING_DESCRIPTION: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_description)],
         },
-        fallbacks=[CommandHandler("cancelar", dialogs.OPERATION_CANCELED)],
+        fallbacks=[CommandHandler("cancelar", bug_report_cancel)],
     )

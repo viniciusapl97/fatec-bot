@@ -130,9 +130,11 @@ SUBJECT_EDIT_DAY_KEYBOARD = "Por favor, escolha o novo dia da semana:"
 SUBJECT_EDIT_SUCCESS = "✅ Campo atualizado com sucesso!"
 SUBJECT_DELETE_CONFIRM = "⚠️ <b>ATENÇÃO:</b>\nTem certeza que deseja excluir a matéria <b>{subject_name}</b>? Esta ação não pode ser desfeita e apagará todas as atividades, faltas e notas associadas."
 SUBJECT_DELETE_SUCCESS = "Matéria <b>{subject_name}</b> foi excluída com sucesso."
+ERROR_SUBJECT_NOT_FOUND = "Erro: matéria não encontrada. Pode já ter sido excluída."
 
 REPORT_PROMPT = "Escolha uma matéria para ver o relatório detalhado:"
 REPORT_NO_SUBJECTS = "Você não tem matérias cadastradas para gerar um relatório."
+REPORT_NOT_FOUND = "Erro: matéria não encontrada para gerar o relatório."
 REPORT_HEADER = "📊 <b>Relatório Completo: {subject_name}</b>\n\n"
 REPORT_SUBJECT_DETAILS = "▪️ <b>Semestre:</b> {semestre}\n▪️ <b>Professor:</b> {professor}\n▪️ <b>Horário:</b> {day_of_week}, das {start_str} às {end_str}\n▪️ <b>Sala:</b> {room}\n▪️ <b>Total de Faltas:</b> {total_absences}\n"
 REPORT_ACTIVITIES_HEADER = "🗓️ <b>Agenda de Atividades:</b>\n"
@@ -154,7 +156,23 @@ ACTIVITY_CREATE_ASK_NOTES = "Data anotada! Você quer adicionar alguma observaç
 ACTIVITY_CREATE_SUCCESS = "✅ <b>{activity_type}</b> '{activity_name}' adicionado(a) com sucesso!"
 ACTIVITY_LIST_HEADER = "🗓️ <b>Seu Calendário de Entregas e Provas:</b>\n\n"
 ACTIVITY_LIST_NO_ACTIVITIES = "Você não tem nenhuma atividade na sua agenda. Use /addtrabalho ou /addprova para começar."
-# ... (Adicionar aqui os textos de gerenciamento quando implementado)
+
+# --- Gerenciamento (/gerenciartrabalhos, /gerenciarprovas) ---
+MANAGE_ACTIVITIES_NONE = "Você não tem nenhum(a) {type} cadastrado(a) para gerenciar."
+MANAGE_ACTIVITIES_HEADER = "🗓️ <b>Gerenciar {type}s</b>\n\nEscolha um item para editar ou excluir:"
+MANAGING_ACTIVITY_HEADER = "Gerenciando: <b>{name}</b>\nO que deseja fazer?"
+EDITING_ACTIVITY_HEADER = (
+    "📝 <b>Editando: {name}</b>\n\n"
+    "▪️ <b>Matéria:</b> {subject}\n"
+    "▪️ <b>Data de entrega:</b> {date}\n"
+    "▪️ <b>Observações:</b> {notes}\n\n"
+    "Selecione o campo que deseja alterar:"
+)
+ASK_NEW_SUBJECTID = "Escolha a nova matéria para este item:"
+ASK_NEW_DUE_DATE = "Envie a nova data de entrega no formato <b>DD/MM/AAAA</b>."
+ASK_NEW_FIELD = "Envie o novo valor para <b>{field}</b>:"
+CONFIRM_DELETE_ITEM = "⚠️ Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita."
+ACTIVITY_DELETED = "Item excluído com sucesso."
 
 
 # =============================================================================

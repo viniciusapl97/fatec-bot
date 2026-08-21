@@ -138,16 +138,23 @@ async def send_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     return ConversationHandler.END
 
 
+async def broadcast_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Cancela o fluxo de transmissão."""
+    await update.message.reply_html(dialogs.OPERATION_CANCELED)
+    context.user_data.clear()
+    return ConversationHandler.END
+
+
 def setup_admin_handlers() -> list:
     """Cria e configura todos os handlers de admin."""
-    
+
     broadcast_handler = ConversationHandler(
         entry_points=[CommandHandler("broadcast", broadcast_start)],
         states={
             AWAITING_MESSAGE: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_message)],
             AWAITING_CONFIRMATION: [CallbackQueryHandler(send_broadcast)],
         },
-        fallbacks=[CommandHandler("cancelar", dialogs.OPERATION_CANCELED)],
+        fallbacks=[CommandHandler("cancelar", broadcast_cancel)],
     )
 
     send_to_user_handler = CommandHandler("enviar", send_to_user)

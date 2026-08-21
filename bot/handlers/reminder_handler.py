@@ -56,6 +56,13 @@ async def received_reminder_time(update: Update, context: ContextTypes.DEFAULT_T
     context.user_data.clear()
     return ConversationHandler.END
 
+async def reminder_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Cancela a criação do lembrete personalizado."""
+    await update.message.reply_html(dialogs.OPERATION_CANCELED)
+    context.user_data.clear()
+    return ConversationHandler.END
+
+
 def setup_reminder_handler() -> ConversationHandler:
     """Cria e configura o ConversationHandler para /lembrar."""
     return ConversationHandler(
@@ -64,5 +71,5 @@ def setup_reminder_handler() -> ConversationHandler:
             AWAITING_MESSAGE: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_reminder_message)],
             AWAITING_TIME: [MessageHandler(filters.TEXT & ~filters.COMMAND, received_reminder_time)],
         },
-        fallbacks=[CommandHandler("cancelar", dialogs.OPERATION_CANCELED)],
+        fallbacks=[CommandHandler("cancelar", reminder_cancel)],
     )

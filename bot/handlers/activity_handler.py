@@ -229,13 +229,8 @@ async def select_activity_action_callback(update: Update, context: ContextTypes.
     return SELECT_ACTIVITY_ACTION
 
 
-async def show_activity_edit_options(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    query = update.callback_query
-    await query.answer()
-    activity_id = context.user_data['activity_id_to_manage']
-    with SessionLocal() as db:
-        activity = activity_service.get_activity_by_id(db, activity_id)
-    
+def build_activity_edit_view(activity):
+    """Monta o texto e o teclado do menu de edição de uma atividade."""
     text = dialogs.EDITING_ACTIVITY_HEADER.format(
         name=activity.name,
         subject=activity.subject.name,
@@ -251,9 +246,19 @@ async def show_activity_edit_options(update: Update, context: ContextTypes.DEFAU
             InlineKeyboardButton("Data de Entrega", callback_data="editactivityfield_due_date"),
             InlineKeyboardButton("Observações", callback_data="editactivityfield_notes"),
         ],
-        [InlineKeyboardButton("« Voltar", callback_data=f"mng_act_{activity_id}")]
+        [InlineKeyboardButton("« Voltar", callback_data=f"mng_act_{activity.id}")]
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    return text, InlineKeyboardMarkup(keyboard)
+
+
+async def show_activity_edit_options(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    query = update.callback_query
+    await query.answer()
+    activity_id = context.user_data['activity_id_to_manage']
+    with SessionLocal() as db:
+        activity = activity_service.get_activity_by_id(db, activity_id)
+
+    text, reply_markup = build_activity_edit_view(activity)
     await query.edit_message_text(text, reply_markup=reply_markup, parse_mode='HTML')
     return SHOWING_ACTIVITY_EDIT_OPTIONS
 
@@ -304,10 +309,12 @@ async def receive_activity_field_update(update: Update, context: ContextTypes.DE
 
     with SessionLocal() as db:
         activity_service.update_activity(db, activity_id, {field_to_edit: new_value})
+        activity = activity_service.get_activity_by_id(db, activity_id)
 
+    text, reply_markup = build_activity_edit_view(activity)
     message_to_send_from = update.message if not query else query.message
-    fake_update = type('Update', (), {'callback_query': type('CallbackQuery', (), {'data': f"edit_activity_{activity_id}", 'answer': (lambda: None), 'from_user': update.effective_user, 'message': message_to_send_from})(), 'effective_user': update.effective_user})()
-    return await show_activity_edit_options(fake_update, context)
+    await message_to_send_from.reply_text(text, reply_markup=reply_markup, parse_mode='HTML')
+    return SHOWING_ACTIVITY_EDIT_OPTIONS
 
 
 async def handle_delete_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
