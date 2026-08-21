@@ -2,11 +2,12 @@ import logging
 from datetime import datetime
 
 import dateparser
-from telegram import Update
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ContextTypes,
     ConversationHandler,
     CommandHandler,
+    CallbackQueryHandler,
     MessageHandler,
     JobQueue,
     filters,
@@ -119,3 +120,68 @@ def setup_reminder_handler() -> ConversationHandler:
         fallbacks=[CommandHandler("cancelar", reminder_cancel)],
         conversation_timeout=CONVERSATION_TIMEOUT_SECONDS,
     )
+
+
+# =============================================================================
+# Seção: Listagem e cancelamento de lembretes (/meuslembretes)
+# =============================================================================
+
+def _truncate(text: str, max_length: int = 30) -> str:
+    """Encurta um texto para caber no botão inline, sem quebrar o layout."""
+    if len(text) <= max_length:
+        return text
+    return text[:max_length - 1].rstrip() + "…"
+
+
+async def list_reminders(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Lista os lembretes pendentes do usuário, cada um com um botão para cancelar."""
+    telegram_user = update.effective_user
+
+    with SessionLocal() as db:
+        user, _ = user_service.get_or_create_user(db, telegram_user.id, telegram_user.first_name, telegram_user.username)
+        reminders = reminder_service.get_pending_reminders_by_user(db, user)
+
+    if not reminders:
+        await update.message.reply_text(dialogs.REMINDER_LIST_EMPTY)
+        return
+
+    keyboard = [
+        [InlineKeyboardButton(
+            dialogs.REMINDER_LIST_BUTTON.format(
+                message=_truncate(r.message),
+                when=r.remind_at.strftime('%d/%m %H:%M'),
+            ),
+            callback_data=f"delete_reminder_{r.id}",
+        )]
+        for r in reminders
+    ]
+    await update.message.reply_html(dialogs.REMINDER_LIST_HEADER, reply_markup=InlineKeyboardMarkup(keyboard))
+
+
+async def delete_reminder_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Cancela um lembrete pendente: remove do banco e do job_queue."""
+    query = update.callback_query
+    await query.answer()
+    reminder_id = int(query.data.split('_')[-1])
+
+    with SessionLocal() as db:
+        deleted = reminder_service.delete_reminder_by_id(db, reminder_id)
+
+    if not deleted:
+        await query.edit_message_text(dialogs.ERROR_NOT_FOUND)
+        return
+
+    # O registro já saiu do banco; remove também o job em memória para o
+    # lembrete não disparar mesmo assim caso o bot não reinicie antes da hora.
+    for job in context.job_queue.get_jobs_by_name(f"reminder_{reminder_id}"):
+        job.schedule_removal()
+
+    await query.edit_message_text(dialogs.REMINDER_LIST_DELETE_SUCCESS)
+
+
+def setup_reminder_list_handler() -> list:
+    """Cria os handlers (comando + callback) para listar/cancelar lembretes pendentes."""
+    return [
+        CommandHandler("meuslembretes", list_reminders),
+        CallbackQueryHandler(delete_reminder_callback, pattern="^delete_reminder_"),
+    ]

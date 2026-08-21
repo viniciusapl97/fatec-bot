@@ -35,6 +35,11 @@ Depois da correção dos bugs, implementado nesta ordem:
    faltas, notas, lembretes pendentes).
 6. Suíte de testes unitários (`tests/`, pytest, SQLite em memória) cobrindo
    toda a camada `bot/services/` — 70 testes.
+7. `CLAUDE.md` e `docs/ROADMAP.md` (este arquivo).
+8. `/meuslembretes` — lista os lembretes pendentes do usuário com um botão
+   de cancelar cada um; ao cancelar, remove tanto o registro no banco
+   quanto o job agendado em memória (`job_queue.get_jobs_by_name` +
+   `schedule_removal()`), senão o lembrete dispararia mesmo cancelado.
 
 Ver `git log` para o histórico completo de commits de cada item.
 
@@ -54,9 +59,6 @@ Ver `git log` para o histórico completo de commits de cada item.
   (`course_service.check_schedule_conflict`), hoje só é usada no onboarding
   `/fatec`. Cadastrar matéria manualmente num horário já ocupado não avisa
   nada.
-- **`/meuslembretes`** — listar e cancelar lembretes pendentes do
-  `/lembrar`. Ficou barato de fazer agora que os lembretes são persistidos
-  (`reminder_service.get_pending_reminders_by_user` já existe).
 - Corrigir o `/privacidade` fantasma (criar o comando ou tirar do `/help`).
 
 ## 🧭 Boa experiência de uso (médio prazo)

@@ -364,4 +364,10 @@ REMINDER_CUSTOM_ERROR_TIME = "Desculpe, não consegui entender essa data/hora. T
 REMINDER_CUSTOM_SUCCESS = "✅ Certo! Agendei um lembrete para '<b>{reminder_message}</b>' em {reminder_datetime}."
 REMINDER_CUSTOM_NOTIFICATION = "🔔 <b>Lembrete:</b> {reminder_message}"
 
+# --- Listagem de Lembretes (/meuslembretes) ---
+REMINDER_LIST_HEADER = "🔔 <b>Seus lembretes pendentes:</b>\n\nToque em um lembrete para cancelá-lo."
+REMINDER_LIST_EMPTY = "Você não tem nenhum lembrete agendado no momento. Use /lembrar para criar um."
+REMINDER_LIST_BUTTON = "❌ {message} — {when}"
+REMINDER_LIST_DELETE_SUCCESS = "✅ Lembrete cancelado com sucesso."
+
 

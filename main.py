@@ -18,7 +18,7 @@ from bot.services import reminder_service
 
 # Importa todas as funções e setups de handlers
 from bot.handlers.common import start, help_command, button_handler, today_command, week_command
-from bot.handlers.reminder_handler import setup_reminder_handler, schedule_reminder
+from bot.handlers.reminder_handler import setup_reminder_handler, setup_reminder_list_handler, schedule_reminder
 from bot.handlers.subject_handler import list_subjects, setup_subject_handler, setup_management_handler, setup_report_handler
 from bot.handlers.activity_handler import list_activities, setup_activity_handler, setup_activity_management_handler
 from bot.handlers.absence_handler import setup_absence_handler, setup_absence_management_handler, report_absences
@@ -68,6 +68,7 @@ async def post_init_configuration(application: Application) -> None:
         BotCommand("broadcast", "(Admin) Envia uma mensagem para todos os usuários"),
         BotCommand("enviar", "(Admin) Envia mensagem para um usuário"),
         BotCommand("lembrar", "Cria um lembrete personalizado"),
+        BotCommand("meuslembretes", "Lista e permite cancelar seus lembretes pendentes"),
         BotCommand("exportar", "Baixa uma cópia de todos os seus dados em JSON"),
     ]
     await application.bot.set_my_commands(commands)
@@ -145,7 +146,8 @@ def main() -> None:
     application.add_handler(setup_delete_user_handler())
     application.add_handlers(setup_admin_handlers())
     application.add_handler(setup_reminder_handler())
-    
+    application.add_handlers(setup_reminder_list_handler())
+
     # --- Handlers de Callback (Botões Genéricos) ---
     application.add_handler(CallbackQueryHandler(button_handler))
 
