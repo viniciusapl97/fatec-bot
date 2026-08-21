@@ -135,3 +135,100 @@ def test_list_grades_returns_only_own_and_embeds_subject_name(db, user):
     assert len(body) == 1
     assert body[0]["subject_name"] == "Cálculo I"
     assert body[0]["value"] == "7.50"
+
+
+def test_subject_attendance_requires_authentication():
+    assert _client().get("/subjects/1/attendance").status_code == 403
+
+
+def test_subject_attendance_returns_404_for_other_users_subject(db, user):
+    other_user, _ = user_service.get_or_create_user(db, 999, "Outro", "outro")
+    other_subject = subject_service.create_subject(db, other_user, "Matéria de outro", "Prof. Z", "Segunda", "C1", None, None, 1)
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().get(f"/subjects/{other_subject.id}/attendance", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 404
+
+
+def test_subject_attendance_returns_404_for_nonexistent_subject(db, user):
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().get("/subjects/99999/attendance", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 404
+
+
+def test_subject_attendance_without_total_classes_returns_null_fields(db, user):
+    subject = subject_service.create_subject(db, user, "Cálculo I", "Prof. X", "Segunda", "A1", None, None, 1)
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().get(f"/subjects/{subject.id}/attendance", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total_classes"] is None
+    assert body["percent"] is None
+    assert body["remaining_allowed"] is None
+    assert body["at_risk"] is False
+    assert body["failed"] is False
+
+
+def test_subject_attendance_computes_percent_and_risk(db, user):
+    subject = subject_service.create_subject(
+        db, user, "Cálculo I", "Prof. X", "Segunda", "A1", None, None, 1, total_classes=40
+    )
+    absence_service.add_absence(db, user, subject, date.today(), 9, None)
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().get(f"/subjects/{subject.id}/attendance", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total_classes"] == 40
+    assert body["total_absences"] == 9
+    assert body["percent"] == 77.5
+    assert body["remaining_allowed"] == 1
+    assert body["at_risk"] is True
+    assert body["failed"] is False
+
+
+def test_subject_grades_requires_authentication():
+    assert _client().get("/subjects/1/grades").status_code == 403
+
+
+def test_subject_grades_returns_404_for_other_users_subject(db, user):
+    other_user, _ = user_service.get_or_create_user(db, 999, "Outro", "outro")
+    other_subject = subject_service.create_subject(db, other_user, "Matéria de outro", "Prof. Z", "Segunda", "C1", None, None, 1)
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().get(f"/subjects/{other_subject.id}/grades", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 404
+
+
+def test_subject_grades_returns_grades_and_average(db, user):
+    subject = subject_service.create_subject(db, user, "Cálculo I", "Prof. X", "Segunda", "A1", None, None, 1)
+    grade_service.add_grade(db, user, subject, "P1", Decimal("7.5"))
+    grade_service.add_grade(db, user, subject, "P2", Decimal("8.5"))
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().get(f"/subjects/{subject.id}/grades", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["subject_name"] == "Cálculo I"
+    assert len(body["grades"]) == 2
+    assert body["average"] == "8.00"
+
+
+def test_subject_grades_average_is_null_when_no_grades(db, user):
+    subject = subject_service.create_subject(db, user, "Cálculo I", "Prof. X", "Segunda", "A1", None, None, 1)
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().get(f"/subjects/{subject.id}/grades", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["grades"] == []
+    assert body["average"] is None

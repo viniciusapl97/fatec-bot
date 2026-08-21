@@ -29,16 +29,23 @@ Ver [`ROADMAP.md`](ROADMAP.md) para o índice geral entre frentes, e
    - 9 testes novos (2 em `tests/test_absence_service.py`, 7 em
      `tests/test_api.py`, incluindo o caso que expôs o bug de isolamento
      de teste documentado em `specs/api-design.md`).
+3. **Frequência e notas por matéria** (2026-08-21):
+   - `GET /subjects/{id}/attendance` — reaproveita
+     `subject_service.get_attendance_info`; campos de percentual/faltas
+     restantes ficam `null` se a matéria ainda não tem `total_classes`
+     definido (mesma semântica do bot).
+   - `GET /subjects/{id}/grades` — lista de notas da matéria + média
+     (`grade_service.get_average`), embutidas num único payload em vez de
+     achatadas na listagem geral de `/grades`.
+   - Ambos checam posse da matéria (`subject.user_id == user.user_id`) e
+     retornam 404 (não 403) tanto pra matéria inexistente quanto pra
+     matéria de outro usuário, pra não vazar quais IDs existem.
+   - 10 testes novos em `tests/test_api.py`.
 
 Ver `git log` para o histórico completo de commits de cada item.
 
 ## 🎯 Próximos passos
 
-- **Frequência/média por matéria** — reaproveitar
-  `subject_service.get_attendance_info` / `grade_service.get_average`,
-  ainda não exposto. Provavelmente como `GET /subjects/{id}/attendance` e
-  embutido na resposta de notas por matéria, não achatado nos endpoints
-  de listagem que já existem.
 - **Endpoints de escrita** (criar/editar/apagar matéria, atividade,
   falta, nota) — a "paridade completa" do app com o bot depende disso.
 - **Telegram Login Widget** — autenticação pro site (diferente do token

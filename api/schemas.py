@@ -6,6 +6,7 @@
 
 from datetime import date, time
 from decimal import Decimal
+from typing import List
 
 from pydantic import BaseModel
 
@@ -60,3 +61,20 @@ class GradeOut(BaseModel):
     value: Decimal
     subject_id: int
     subject_name: str
+
+
+class AttendanceOut(BaseModel):
+    subject_id: int
+    total_classes: int | None
+    total_absences: int
+    percent: float | None = None
+    remaining_allowed: int | None = None
+    at_risk: bool = False
+    failed: bool = False
+
+
+class SubjectGradesOut(BaseModel):
+    subject_id: int
+    subject_name: str
+    grades: List[GradeOut]
+    average: Decimal | None
