@@ -83,6 +83,28 @@ async def received_end_time(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     except ValueError:
         await update.message.reply_html(dialogs.ERROR_INVALID_TIME)
         return END_TIME
+
+    data = context.user_data
+    telegram_user = update.effective_user
+    with SessionLocal() as db:
+        user, _ = user_service.get_or_create_user(
+            db, telegram_user.id, telegram_user.first_name, telegram_user.username
+        )
+        conflicting_subject = subject_service.check_conflict_with_existing(
+            db, user, data["day_of_week"], data["start_time"], data["end_time"]
+        )
+
+    if conflicting_subject:
+        await update.message.reply_html(
+            dialogs.SUBJECT_CREATE_TIME_CONFLICT.format(
+                subject_name=conflicting_subject.name,
+                day_of_week=conflicting_subject.day_of_week,
+                start_str=conflicting_subject.start_time.strftime('%H:%M'),
+                end_str=conflicting_subject.end_time.strftime('%H:%M'),
+            )
+        )
+        return START_TIME
+
     await update.message.reply_text(dialogs.SUBJECT_CREATE_ASK_SEMESTER)
     return SEMESTER
 

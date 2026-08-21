@@ -67,6 +67,20 @@ def get_subjects_by_day_of_week(db: Session, user: User, day_name: str) -> List[
         Subject.day_of_week == day_name
     ).order_by(Subject.start_time).all()
 
+def check_conflict_with_existing(db: Session, user: User, day: str, start_time: time, end_time: time) -> Subject | None:
+    """
+    Verifica se um horário (dia + início + fim) colide com alguma matéria que
+    o usuário já tem cadastrada no mesmo dia. Retorna a matéria conflitante,
+    ou None se não há conflito.
+    """
+    for subject in get_subjects_by_day_of_week(db, user, day):
+        if not subject.start_time or not subject.end_time:
+            continue
+        # Condição de sobreposição: (StartA < EndB) and (EndA > StartB)
+        if start_time < subject.end_time and end_time > subject.start_time:
+            return subject
+    return None
+
 def get_subject_by_id(db: Session, subject_id: int) -> Subject | None:
     return db.query(Subject).filter(Subject.id == subject_id).first()
 

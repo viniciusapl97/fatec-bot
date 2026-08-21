@@ -44,6 +44,13 @@ Depois da correção dos bugs, implementado nesta ordem:
    `/help`, sem handler). Texto em `dialogs.PRIVACY_POLICY_TEXT`,
    informativo, não é uma política jurídica formal — revisar/atualizar se
    o que o bot coleta ou compartilha mudar.
+10. Conflito de horário no `/addmateria` manual — nova
+    `subject_service.check_conflict_with_existing` (mesma lógica de
+    sobreposição do `course_service.check_schedule_conflict`, mas
+    comparando com as matérias já cadastradas do usuário, não com o
+    catálogo). Se colidir, avisa qual matéria conflita e pede um novo
+    horário de início (volta pro estado `START_TIME` da conversa).
+    4 testes novos em `tests/test_subject_service.py`.
 
 Ver `git log` para o histórico completo de commits de cada item.
 
@@ -54,14 +61,6 @@ Ver `git log` para o histórico completo de commits de cada item.
   `start_time`/`end_time` foram deixados de fora do menu de
   `/gerenciarmaterias` "para não causar erros". Só dá pra editar
   nome/professor/dia/sala/semestre/total de aulas.
-
-## 🎯 Próximos passos sugeridos (alto valor, baixo esforço)
-
-- **Conflito de horário no `/addmateria` manual.** A lógica já existe
-  (`course_service.check_schedule_conflict`), hoje só é usada no onboarding
-  `/fatec`. Cadastrar matéria manualmente num horário já ocupado não avisa
-  nada.
-- Corrigir o `/privacidade` fantasma (criar o comando ou tirar do `/help`).
 
 ## 🧭 Boa experiência de uso (médio prazo)
 

@@ -172,3 +172,38 @@ def test_get_attendance_info_failed_status(db, user):
     assert info["remaining_allowed"] == -2
     assert info["at_risk"] is False
     assert info["failed"] is True
+
+
+def test_check_conflict_with_existing_detects_overlap(db, user):
+    _make_subject(db, user, day="Segunda", start="19:00", end="20:40")
+
+    conflict = subject_service.check_conflict_with_existing(
+        db, user, "Segunda", time(20, 0), time(21, 0)
+    )
+    assert conflict is not None
+    assert conflict.name == "Cálculo I"
+
+
+def test_check_conflict_with_existing_ignores_different_day(db, user):
+    _make_subject(db, user, day="Segunda", start="19:00", end="20:40")
+
+    conflict = subject_service.check_conflict_with_existing(
+        db, user, "Terça", time(19, 0), time(20, 40)
+    )
+    assert conflict is None
+
+
+def test_check_conflict_with_existing_allows_adjacent_times(db, user):
+    _make_subject(db, user, day="Segunda", start="19:00", end="20:40")
+
+    conflict = subject_service.check_conflict_with_existing(
+        db, user, "Segunda", time(20, 40), time(22, 0)
+    )
+    assert conflict is None
+
+
+def test_check_conflict_with_existing_returns_none_without_subjects(db, user):
+    conflict = subject_service.check_conflict_with_existing(
+        db, user, "Segunda", time(19, 0), time(20, 40)
+    )
+    assert conflict is None

@@ -129,6 +129,11 @@ SUBJECT_CREATE_ASK_DAY = "Anotado. Agora escolha o dia da semana da aula:"
 SUBJECT_CREATE_ASK_ROOM = "Dia definido. Qual a sala ou laboratório?"
 SUBJECT_CREATE_ASK_START_TIME = "Sala anotada. Qual o horário de <b>início</b> da aula? (formato HH:MM, ex: 19:00)"
 SUBJECT_CREATE_ASK_END_TIME = "Horário de início salvo. E qual o horário de <b>término</b>? (formato HH:MM, ex: 22:30)"
+SUBJECT_CREATE_TIME_CONFLICT = (
+    "⚠️ Esse horário conflita com a matéria <b>{subject_name}</b> ({day_of_week}, das {start_str} às {end_str}) "
+    "que você já tem cadastrada.\n\n"
+    "Por favor, envie um novo horário de <b>início</b>. (formato HH:MM)"
+)
 SUBJECT_CREATE_ASK_SEMESTER = "Horários salvos. Em qual semestre você está cursando esta matéria? (ex: 1, 2, 3...)"
 SUBJECT_CREATE_ASK_TOTAL_CLASSES = (
     "Quase lá! Para eu calcular sua frequência, quantas aulas dessa matéria estão previstas no semestre?\n\n"
