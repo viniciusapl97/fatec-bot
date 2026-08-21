@@ -101,6 +101,37 @@ Ver `git log` para o histórico completo de commits de cada item.
   propósito — exigem mockar bastante a API do `python-telegram-bot`; os
   `services/` concentram a lógica de negócio testável isoladamente).
 
+## 💭 Em standby: frontend web
+
+Ideia discutida em 2026-08-21, guardada pra depois — usuário pediu explicitamente
+pra só anotar, sem implementar nada por enquanto.
+
+**A pergunta:** dá pra ter um site onde o usuário entra com a conta do Telegram e
+vê as mesmas informações do bot (grade, notas, faltas/frequência, calendário)?
+
+**Por que é menos ambicioso do que parece:** toda a regra de negócio já está
+isolada em `bot/services/`, sem nenhuma dependência do Telegram — dá pra expor
+esses mesmos services por trás de uma API (ex.: FastAPI) sem reescrever a lógica.
+
+**Autenticação — não usar usuário+senha tradicional.** Telegram não expõe senha
+pra terceiros. O caminho certo é o **Telegram Login Widget**: o usuário clica
+"Entrar com Telegram", o próprio Telegram autentica e devolve um payload
+assinado (`user_id`, nome, username, foto) pro backend validar o hash. Zero
+senha nova pra gerenciar, e o `user_id` já bate com a chave primária que o bot
+já usa (`User.user_id`) — login e dado batem automaticamente.
+
+**Estimativa por nível de ambição:**
+- MVP somente-leitura (login + ver grade/notas/faltas/frequência/calendário):
+  alguns fins de semana.
+- Paridade completa (criar/editar/apagar tudo pelo site também, igual ao bot):
+  várias semanas, part-time.
+- Design autoral + gráficos de evolução + tempo real ("muito foda"): meses —
+  é a parte mais aberta, sem teto.
+
+**Recomendação quando retomar:** começar pelo MVP somente-leitura pra validar a
+arquitetura (API reaproveitando `services/` + Login Widget) antes de comprometer
+tempo com paridade completa ou design autoral.
+
 ## Hospedagem
 
 Ainda rodando localmente. Decisão em aberto (2026-08-21): o usuário quer
