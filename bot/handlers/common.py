@@ -184,6 +184,24 @@ async def today_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         await update.message.reply_html(message)
 
 
+def build_week_summary_message(db, user) -> str:
+    """Monta o texto do resumo da semana para um usuário (usado por /semana e pelo resumo semanal automático)."""
+    today = date.today()
+    end_of_week = today + timedelta(days=6)
+    message = dialogs.AGENDA_WEEK_HEADER.format(start=today.strftime('%d/%m'), end=end_of_week.strftime('%d/%m'))
+
+    week_activities = activity_service.get_activities_by_date_range(db, user, today, end_of_week)
+    if not week_activities:
+        message += dialogs.NO_ACTIVITIES_WEEK
+    else:
+        for act in week_activities:
+            icon = "📝" if act.activity_type == "trabalho" else "❗️"
+            date_str = act.due_date.strftime("%d/%m (%a)")
+            message += dialogs.WEEK_ACTIVITY_LINE.format(date_str=date_str, icon=icon, name=act.name, subject_name=act.subject.name)
+
+    return message
+
+
 async def week_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Exibe as atividades da semana, usando o arquivo de diálogos."""
     query = update.callback_query
@@ -193,21 +211,9 @@ async def week_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     else:
         telegram_user = update.effective_user
 
-    today = date.today()
-    end_of_week = today + timedelta(days=6)
-    message = dialogs.AGENDA_WEEK_HEADER.format(start=today.strftime('%d/%m'), end=end_of_week.strftime('%d/%m'))
-    
     with SessionLocal() as db:
         user, _ = user_service.get_or_create_user(db, telegram_user.id, telegram_user.first_name, telegram_user.username)
-        week_activities = activity_service.get_activities_by_date_range(db, user, today, end_of_week)
-
-        if not week_activities:
-            message += dialogs.NO_ACTIVITIES_WEEK
-        else:
-            for act in week_activities:
-                icon = "📝" if act.activity_type == "trabalho" else "❗️"
-                date_str = act.due_date.strftime("%d/%m (%a)")
-                message += dialogs.WEEK_ACTIVITY_LINE.format(date_str=date_str, icon=icon, name=act.name, subject_name=act.subject.name)
+        message = build_week_summary_message(db, user)
 
     if query:
         await query.edit_message_text(message, parse_mode="HTML")

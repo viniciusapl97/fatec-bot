@@ -59,13 +59,18 @@ Depois da correção dos bugs, implementado nesta ordem:
     de conflito do item 10 — `check_conflict_with_existing` ganhou o
     parâmetro `exclude_subject_id` pra a matéria não colidir consigo
     mesma. 2 testes novos.
+12. Resumo semanal automático — job `send_weekly_summary_job`
+    (`bot/jobs.py`) roda toda segunda às 08:00 (`job_queue.run_daily(...,
+    days=(1,))`; atenção: no python-telegram-bot v20+ `days` é
+    0-6=domingo-sábado, não a convenção antiga de segunda-domingo) e manda
+    pra cada usuário cadastrado o mesmo resumo do `/semana`. Extraído
+    `build_week_summary_message(db, user)` de `common.py` pra ser
+    reaproveitado tanto pelo comando quanto pelo job.
 
 Ver `git log` para o histórico completo de commits de cada item.
 
 ## 🧭 Boa experiência de uso (médio prazo)
 
-- Resumo semanal automático (mandar `/semana` sozinho toda segunda de
-  manhã).
 - Silenciar notificações automáticas de prazo (`/notificacoes on|off`).
 - Sincronizar provas/trabalhos com o calendário do celular (exportar
   `.ics`).

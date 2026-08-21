@@ -29,7 +29,7 @@ from bot.handlers.bug_report_handler import setup_bug_report_handler
 from bot.handlers.fatec_handler import setup_fatec_handler
 from bot.handlers.user_settings_handler import setup_delete_user_handler
 from bot.handlers.admin_handler import setup_admin_handlers
-from bot.jobs import check_deadlines_job
+from bot.jobs import check_deadlines_job, send_weekly_summary_job
 
 
 # Configura o logging
@@ -117,6 +117,9 @@ def main() -> None:
     job_queue = application.job_queue
     # Agenda a tarefa para rodar todo dia às 09:00 da manhã
     job_queue.run_daily(check_deadlines_job, time=time(hour=9, minute=0), name="check_deadlines_daily")
+    # Agenda o resumo semanal para toda segunda às 08:00 da manhã
+    # (days: 0-6 = domingo-sábado na convenção do python-telegram-bot v20+, então segunda = 1)
+    job_queue.run_daily(send_weekly_summary_job, time=time(hour=8, minute=0), days=(1,), name="weekly_summary")
     # Reagenda lembretes personalizados que ficaram pendentes de um restart anterior
     reschedule_pending_reminders(application)
 

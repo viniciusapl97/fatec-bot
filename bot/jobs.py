@@ -5,8 +5,9 @@ from collections import defaultdict
 from telegram.ext import ContextTypes
 
 from bot.db.base import SessionLocal
-from bot.services import activity_service
+from bot.services import activity_service, user_service
 from bot.core import dialogs
+from bot.handlers.common import build_week_summary_message
 
 logger = logging.getLogger(__name__)
 
@@ -48,3 +49,23 @@ async def check_deadlines_job(context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(chat_id=user_id, text=full_message, parse_mode='HTML')
         except Exception as e:
             logger.error(f"Não foi possível enviar lembrete para o usuário {user_id}: {e}")
+
+
+async def send_weekly_summary_job(context: ContextTypes.DEFAULT_TYPE):
+    """
+    Tarefa que roda toda segunda de manhã e manda o resumo da semana
+    (equivalente ao /semana) para todos os usuários cadastrados.
+    """
+    logger.info("Executando a tarefa de resumo semanal (send_weekly_summary_job)...")
+
+    with SessionLocal() as db:
+        summaries = {
+            user.user_id: dialogs.WEEKLY_SUMMARY_INTRO + build_week_summary_message(db, user)
+            for user in user_service.get_all_active_users(db)
+        }
+
+    for user_id, message in summaries.items():
+        try:
+            await context.bot.send_message(chat_id=user_id, text=message, parse_mode='HTML')
+        except Exception as e:
+            logger.error(f"Não foi possível enviar o resumo semanal para o usuário {user_id}: {e}")

@@ -40,6 +40,7 @@ TODAY_ACTIVITY_LINE = "   {icon} <b>{name}</b> (Matéria: {subject_name})\n"
 AGENDA_WEEK_HEADER = "🗓️ <b>Agenda para os próximos 7 dias (de {start} a {end})</b>:\n\n"
 NO_ACTIVITIES_WEEK = "Nenhuma atividade agendada para esta semana. Que tranquilidade!"
 WEEK_ACTIVITY_LINE = " • <b>{date_str}:</b> {icon} {name} ({subject_name})\n"
+WEEKLY_SUMMARY_INTRO = "🌅 Bom dia! Começando a semana, aqui está o que te espera:\n\n"
 
 
 # Ajuda
