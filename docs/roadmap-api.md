@@ -81,6 +81,21 @@ Ver [`ROADMAP.md`](ROADMAP.md) para o índice geral entre frentes, e
    - 5 testes novos em `tests/test_api.py` (usuário novo, usuário
      existente, payload adulterado, hash errado, `auth_date` expirado).
 
+6. **CORS** (2026-08-24) — `CORSMiddleware` em `api/main.py`, liberando a
+   origem do site React (`web/`, ver [`roadmap-app.md`](roadmap-app.md)).
+   Nova env var opcional `FRONTEND_ORIGINS` (`bot/core/settings.py`),
+   default `http://localhost:5173`. Sem `allow_credentials` — auth é por
+   Bearer token, não cookie.
+7. **`SubjectOut` ganhou os campos de risco de falta** (2026-08-24) —
+   `percent`, `remaining_allowed`, `at_risk`, `failed` (mesmos campos de
+   `AttendanceOut`) agora vêm embutidos em `GET/POST/PATCH /subjects`,
+   não só em `GET /subjects/{id}/attendance`. Motivo: o banner de risco
+   no dashboard do site (`roadmap-app.md`) precisa dessa info pra todas
+   as matérias de uma vez, sem N chamadas extras. `api/routers/subjects.py`
+   ganhou um `_to_out()` (mesmo padrão dos outros routers) — antes os 3
+   endpoints devolviam o `Subject` do SQLAlchemy direto via
+   `from_attributes`, o que não dá pra computar campos derivados.
+
 Ver `git log` para o histórico completo de commits de cada item.
 
 ## 🎯 Próximos passos
@@ -88,10 +103,10 @@ Ver `git log` para o histórico completo de commits de cada item.
 - Decidir se listagens ganham paginação real — a API não tem o limite de
   4096 caracteres do Telegram, mas listas grandes ainda merecem
   paginação por performance/UX.
-- Onde o site vai guardar o token emitido por `/auth/telegram` (e se vale
-  a pena dar expiração/rotação a esses tokens especificamente) — decisão
-  adiada pra quando o site começar de verdade, ver
-  [`roadmap-app.md`](roadmap-app.md).
+- Expiração/rotação para os tokens emitidos por `/auth/telegram` — ainda
+  não têm nenhuma (mesmo mecanismo do `/tokendeacesso`, que também não
+  expira). O site (`web/`, ver [`roadmap-app.md`](roadmap-app.md)) já
+  guarda o token em `localStorage`; decisão de expiração adiada.
 
 ## Lembrete operacional
 

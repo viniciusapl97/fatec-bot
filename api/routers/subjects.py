@@ -27,13 +27,30 @@ def _conflict_detail(conflicting: Subject) -> str:
     )
 
 
+def _to_out(subject: Subject) -> SubjectOut:
+    attendance = subject_service.get_attendance_info(subject) or {}
+    return SubjectOut(
+        id=subject.id,
+        name=subject.name,
+        professor=subject.professor,
+        day_of_week=subject.day_of_week,
+        room=subject.room,
+        start_time=subject.start_time,
+        end_time=subject.end_time,
+        semestre=subject.semestre,
+        total_classes=subject.total_classes,
+        total_absences=subject.total_absences,
+        **attendance,
+    )
+
+
 @router.get("", response_model=List[SubjectOut])
 async def list_subjects(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> list:
     """Lista as matérias do usuário dono do token, ordenadas por dia/horário (mesma lógica do /grade)."""
-    return subject_service.get_subjects_by_user(db, user)
+    return [_to_out(s) for s in subject_service.get_subjects_by_user(db, user)]
 
 
 @router.post("", response_model=SubjectOut, status_code=status.HTTP_201_CREATED)
@@ -41,7 +58,7 @@ async def create_subject(
     payload: SubjectCreate,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-) -> Subject:
+) -> SubjectOut:
     """Cria uma matéria (mesma lógica do /addmateria). 409 se o horário colidir com outra matéria já cadastrada."""
     if payload.start_time and payload.end_time:
         conflicting = subject_service.check_conflict_with_existing(
@@ -50,7 +67,7 @@ async def create_subject(
         if conflicting:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_conflict_detail(conflicting))
 
-    return subject_service.create_subject(
+    subject = subject_service.create_subject(
         db,
         user,
         name=payload.name,
@@ -62,6 +79,7 @@ async def create_subject(
         semestre=payload.semestre,
         total_classes=payload.total_classes,
     )
+    return _to_out(subject)
 
 
 @router.patch("/{subject_id}", response_model=SubjectOut)
@@ -70,7 +88,7 @@ async def update_subject(
     payload: SubjectUpdate,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-) -> Subject:
+) -> SubjectOut:
     """Atualiza campos de uma matéria (só os enviados). 409 se a mudança de dia/horário colidir com outra matéria."""
     subject = get_owned_subject(db, subject_id, user)
     updates = payload.model_dump(exclude_unset=True)
@@ -85,7 +103,7 @@ async def update_subject(
         if conflicting:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_conflict_detail(conflicting))
 
-    return subject_service.update_subject(db, subject_id, updates)
+    return _to_out(subject_service.update_subject(db, subject_id, updates))
 
 
 @router.delete("/{subject_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -24,6 +24,9 @@ pytest-report.html
 # Arquivos de log
 *.log
 
+# Banco SQLite local (dev/testes manuais — ver CLAUDE.md)
+*.db
+
 # Arquivos de sistema operacional
 .DS_Store
 Thumbs.db

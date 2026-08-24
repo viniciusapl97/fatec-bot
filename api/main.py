@@ -7,13 +7,22 @@
 # Rodar localmente: uvicorn api.main:app --reload
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from api.routers import auth, me, subjects, activities, absences, grades
+from bot.core.settings import FRONTEND_ORIGINS
 
 app = FastAPI(
     title="Jovis API",
     version="0.1.0",
     description="API do Jovis — mesmos dados do bot de Telegram, para o site e o app.",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=FRONTEND_ORIGINS,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(auth.router)

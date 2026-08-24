@@ -61,3 +61,13 @@ EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
 EMAIL_SENDER = os.getenv("EMAIL_SENDER")
 EMAIL_SENDER_PASSWORD = os.getenv("EMAIL_SENDER_PASSWORD")
 EMAIL_RECEIVER = os.getenv("EMAIL_RECEIVER")
+
+# --- CORS (API) ---
+# Origens do frontend autorizadas a chamar a API pelo browser (site React).
+# Autenticação é por Bearer token, não cookie, então allow_credentials não
+# precisa ser True.
+FRONTEND_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("FRONTEND_ORIGINS", "http://localhost:5173").split(",")
+    if origin.strip()
+]

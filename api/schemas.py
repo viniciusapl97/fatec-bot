@@ -35,6 +35,14 @@ class SubjectOut(BaseModel):
     semestre: int | None = None
     total_classes: int | None = None
     total_absences: int
+    # Mesmos campos computados de AttendanceOut, embutidos aqui pra listagens
+    # (ex.: banner de risco no dashboard) não precisarem de N chamadas extras
+    # a GET /subjects/{id}/attendance — ficam em null/False se total_classes
+    # não estiver definido, igual a semântica de AttendanceOut.
+    percent: float | None = None
+    remaining_allowed: int | None = None
+    at_risk: bool = False
+    failed: bool = False
 
     model_config = {"from_attributes": True}
 

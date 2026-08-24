@@ -76,6 +76,38 @@ def test_list_subjects_returns_only_own_subjects(db, user):
     assert body[0]["total_classes"] == 40
 
 
+def test_list_subjects_embeds_attendance_risk_fields(db, user):
+    """GET /subjects embute os mesmos campos de risco de GET /subjects/{id}/attendance,
+    pro dashboard do site poder montar um banner de risco sem N chamadas extras."""
+    subject_service.create_subject(db, user, "Cálculo I", "Prof. X", "Segunda", "A1", None, None, 1, total_classes=40)
+    subject = subject_service.get_subjects_by_user(db, user)[0]
+    absence_service.add_absence(db, user, subject, date.today(), 9, None)
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().get("/subjects", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    body = response.json()[0]
+    assert body["percent"] == 77.5
+    assert body["remaining_allowed"] == 1
+    assert body["at_risk"] is True
+    assert body["failed"] is False
+
+
+def test_list_subjects_risk_fields_are_null_without_total_classes(db, user):
+    subject_service.create_subject(db, user, "Cálculo I", "Prof. X", "Segunda", "A1", None, None, 1)
+    token = access_token_service.create_access_token(db, user)
+
+    response = _client().get("/subjects", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    body = response.json()[0]
+    assert body["percent"] is None
+    assert body["remaining_allowed"] is None
+    assert body["at_risk"] is False
+    assert body["failed"] is False
+
+
 def test_activities_requires_authentication():
     assert _client().get("/activities").status_code == 403
 

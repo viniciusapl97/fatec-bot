@@ -28,9 +28,17 @@ pytest tests/test_subject_service.py::test_get_attendance_info_ok_status  # one 
 
 # Run the API locally (needs the same .env as the bot)
 uvicorn api.main:app --reload   # docs at http://localhost:8000/docs
+
+# Web frontend (web/) — Vite + React + TypeScript, needs the API running
+# (see above) and its own web/.env (copy web/.env.example)
+cd web && npm install
+npm run dev     # dev server at http://localhost:5173
+npm run build   # tsc -b && vite build
+npm run test    # vitest run — see "Web frontend tests" below
+npm run test:watch
 ```
 
-There is no linter/formatter configured in this repo.
+There is no linter/formatter configured in this repo (the `web/` frontend has `oxlint` from the Vite scaffold, but it isn't wired into any workflow).
 
 ### Configuration
 
@@ -41,6 +49,9 @@ There is no linter/formatter configured in this repo.
 - `ADMIN_USER_IDS` — comma-separated Telegram user IDs; if empty, **all** admin commands are denied (fails closed, see `bot/decorators.py`).
 - `TIMEZONE_NAME` — optional, defaults to `America/Sao_Paulo`.
 - `EMAIL_HOST`/`EMAIL_PORT`/`EMAIL_SENDER`/`EMAIL_SENDER_PASSWORD`/`EMAIL_RECEIVER` — optional, only needed for `/bug` reports to actually send.
+- `FRONTEND_ORIGINS` — optional, comma-separated list of origins allowed by the API's CORS middleware (`api/main.py`); defaults to `http://localhost:5173` (the Vite dev server).
+
+For local testing without Postgres or a real Telegram bot, `DATABASE_URL=sqlite:///./dev.db` works (`bot/db/base.py` switches pool settings for sqlite) and `TELEGRAM_TOKEN` just needs to be non-empty — it's only actually called against the Telegram API by the bot process and by `/auth/telegram`'s signature check, not by anything else.
 
 `tests/conftest.py` sets safe defaults for these via `os.environ.setdefault(...)` at the very top of the file, before any `bot.*` import, specifically so the test suite doesn't need a real `.env`.
 
@@ -70,12 +81,26 @@ Every multi-step flow (`/addmateria`, `/faltei`, `/lembrar`, `/fatec`, etc.) is 
 
 ### API (`api/`)
 
-A FastAPI app that exposes `bot/services/` over HTTP, for the (future) web/React Native clients — it's a second, independent consumer of the same services layer that `bot/handlers/` already uses, not a rewrite of anything. `api/main.py` is the ASGI app; `api/deps.py` has the two shared dependencies (`get_db`, `get_current_user`); `api/routers/*.py` are one file per resource; `api/schemas.py` has the Pydantic response models (kept separate from `bot/db/models.py` on purpose, so a DB column change doesn't silently change the API contract).
+A FastAPI app that exposes `bot/services/` over HTTP, for the web site (`web/`, below) and the (future) React Native app — it's a second, independent consumer of the same services layer that `bot/handlers/` already uses, not a rewrite of anything. `api/main.py` is the ASGI app; `api/deps.py` has the two shared dependencies (`get_db`, `get_current_user`); `api/routers/*.py` are one file per resource; `api/schemas.py` has the Pydantic response models (kept separate from `bot/db/models.py` on purpose, so a DB column change doesn't silently change the API contract).
 
-- **Auth is a personal access token, not the Telegram Login Widget** (that's reserved for the eventual public-facing website — see `docs/specs/api-design.md` and `docs/specs/frontend-web-and-app.md`). `/tokendeacesso` in the bot (`bot/handlers/user_settings_handler.py`) generates one via `access_token_service.create_access_token`; only its SHA-256 hash is stored (`AccessToken.token_hash`), so the plaintext is shown exactly once and can't be recovered — `/revogartokens` deletes all of a user's tokens if one leaks. Send it as `Authorization: Bearer <token>`; `api/deps.get_current_user` resolves it back to a `User` via `access_token_service.get_user_by_token`.
+- **Two ways to get a Bearer token**: a personal access token (`/tokendeacesso` in the bot, `bot/handlers/user_settings_handler.py`, via `access_token_service.create_access_token` — meant for the app/personal use), or the Telegram Login Widget (`POST /auth/telegram`, meant for the site — see `docs/specs/api-design.md` and `docs/specs/frontend-web-and-app.md`). Both end up as the same kind of `AccessToken` row; only its SHA-256 hash is stored (`AccessToken.token_hash`), so a personal-access-token plaintext is shown exactly once and can't be recovered — `/revogartokens` deletes all of a user's tokens if one leaks. Send it as `Authorization: Bearer <token>`; `api/deps.get_current_user` resolves it back to a `User` via `access_token_service.get_user_by_token`.
 - Adding an endpoint = add a Pydantic schema in `api/schemas.py`, a router function in `api/routers/` that takes `user: User = Depends(get_current_user)` (and `db: Session = Depends(get_db)` if it needs to query more than `user` itself), call the matching `bot/services/*` function, and `include_router(...)` it in `api/main.py`.
+- **CORS**: `api/main.py` adds `CORSMiddleware` allowing the origins in `bot/core/settings.FRONTEND_ORIGINS` (env var, default `http://localhost:5173`). No `allow_credentials` — auth is Bearer-token-in-header, not cookie-based, so the browser doesn't need cross-origin credentialed requests.
 
-### Migrations (Alembic)
+### Web frontend (`web/`)
+
+A Vite + React + TypeScript SPA consuming `api/` — the site half of `docs/specs/frontend-web-and-app.md` (the React Native app hasn't been started). No UI component library; plain CSS (`src/index.css`) with CSS custom properties for light/dark.
+
+- **`src/api/`**: `types.ts` mirrors `api/schemas.py` by hand (kept as a separate contract on purpose, same reasoning as the schemas/models split in the backend); `client.ts` is a thin `fetch` wrapper that attaches `Authorization: Bearer <token>` from `localStorage` and throws `ApiError` on non-2xx (message pulled from the response's `detail`); `resources.ts` has one function per `api/routers/*.py` endpoint. Adding a backend endpoint = add its type(s) to `types.ts` and a function to `resources.ts`.
+- **Auth** (`src/auth/`): `AuthContext` holds `user`/`login`/`logout`, backed by the token in `localStorage`. `client.ts` dispatches a `jovis:unauthorized` `window` event on any `401`; `AuthContext` listens for it and clears `user`, which `RequireAuth` (route wrapper) turns into a redirect to `/login`. `TelegramLoginButton` injects the official Telegram widget `<script>` tag pointed at `VITE_TELEGRAM_BOT_USERNAME` and wires its callback to `AuthContext.login`, which calls `POST /auth/telegram` and stores the returned token — same flow as the backend's Login Widget support.
+- **Pages** (`src/pages/`): one per resource (`Subjects`, `Activities`, `Absences`, `Grades`) follow the same shape — a list (TanStack Query `useQuery`) plus an inline create/edit `<form class="panel">` (not a modal) toggled by local `editingId: number | 'new' | null` state, with `useMutation` invalidating the list query on success. Copy this shape for a new resource page. Backend validation errors (e.g. the `409` schedule conflict on `Subjects`) surface via `ApiError.message` in an `ErrorBanner` scoped to the form, not the whole page.
+- **Config**: `web/.env` (gitignored, copy from `.env.example`) needs `VITE_API_URL` (the FastAPI base URL) and `VITE_TELEGRAM_BOT_USERNAME` (the bot's `@username`, without the `@`, for the Login Widget).
+
+#### Web frontend tests
+
+Vitest + React Testing Library + jsdom (`web/vite.config.ts`'s `test` block, `web/src/test/setup.ts` for jest-dom matchers and per-test `localStorage`/DOM cleanup). `web/.env.test` pins `VITE_API_URL`/`VITE_TELEGRAM_BOT_USERNAME` to fixed dummy values so tests don't depend on a developer's local `web/.env` — Vitest defaults to Vite's `test` mode, which loads `.env.test` automatically.
+
+Coverage is intentionally not exhaustive across the 4 CRUD pages (Matérias/Atividades/Faltas/Notas share one list+inline-form shape — see "Pages" above): `src/api/client.test.ts` covers the `fetch` wrapper (auth header, 401 → clear token + `UNAUTHORIZED_EVENT`, error `detail` parsing, 204 handling); `src/auth/AuthContext.test.tsx` covers the login/logout/session-refresh state machine; `src/pages/Subjects.test.tsx` is a full component test of the list+form+delete pattern, including the `409` schedule-conflict path, and stands in as the reference for testing another page the same way — it isn't duplicated onto Activities/Absences/Grades. All three files `vi.mock('../api/resources')` rather than mocking `fetch` directly, so tests assert on which resource function was called with which payload, not on request wiring.
 
 Schema changes go through Alembic (`migrations/`), not `Base.metadata.create_all()` — `main.py` no longer calls it. `migrations/env.py` imports `bot.db.base.Base` + `bot.db.models` and sets `sqlalchemy.url` from `bot.core.settings.DATABASE_URL` at runtime (nothing hardcoded in `alembic.ini`), so it always uses the same env vars as the app itself.
 
