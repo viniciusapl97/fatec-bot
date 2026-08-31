@@ -50,6 +50,14 @@ folders, and moved all of `docs/` to English for token economy — see
 - [`features/api-pagination/`](features/api-pagination/) — pagination for the
   API's listing endpoints (`Draft`, see "Next steps" in
   [`roadmap-api.md`](roadmap-api.md)).
+- [`features/discord-bot/`](features/discord-bot/) — a `discord_bot/`
+  package as a second direct consumer of `bot/services/`, alongside `api/`.
+  Full design closed in a `/grill-with-docs` planning session (`Draft`,
+  ready for implementation): read-only v1, `discord.py`, and a
+  `telegram_id`/`discord_id` identity model that lets a `User` originate
+  on either platform and optionally link the other, without touching the
+  6 tables that FK into `users.user_id` today. No `roadmap-discord.md` yet
+  — gets created once the first slice ships (see the feature's `tasks.md`).
 
 ## Technical reference by area
 
