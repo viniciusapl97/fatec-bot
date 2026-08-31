@@ -1,87 +1,89 @@
-# Roadmap — Site + App Android/iOS
+# Roadmap — Site + Android/iOS App
 
-Ver [`ROADMAP.md`](ROADMAP.md) para o índice geral entre frentes, e
-[`specs/frontend-web-and-app.md`](specs/frontend-web-and-app.md) para a
-decisão completa (stack, autenticação, estimativas, motivo de cada
-escolha).
+See [`ROADMAP.md`](ROADMAP.md) for the general index across areas, and
+[`specs/frontend-web-and-app.md`](specs/frontend-web-and-app.md) for the
+full decision (stack, authentication, estimates, reasoning behind each
+choice).
 
-Última atualização: 2026-08-24.
+Last updated: 2026-08-24.
 
-## Status: 🚧 site com paridade completa de CRUD; app ainda não começado
+## Status: 🚧 site has full CRUD parity; app not started yet
 
-A ideia evoluiu ao longo da conversa em 2026-08-21: começou como "só um
-site" → depois "site + widget Android" → decisão final "site + app
-completo (React Native), com widget de tela inicial, iOS talvez um dia".
-A ordem recomendada original era app Android primeiro — decisão revista
-em 2026-08-24: o site foi começado primeiro, por pedido explícito.
+The idea evolved over the course of the 2026-08-21 conversation: started as
+"just a site" → then "site + Android widget" → final decision "site + full
+app (React Native), with a home-screen widget, iOS maybe someday". The
+original recommended order was Android app first — revised on 2026-08-24:
+the site was started first, by explicit request.
 
-## ✅ Feito
+## ✅ Done
 
-1. **Site React** (`web/`, 2026-08-24) — Vite + React + TypeScript,
-   React Router, TanStack Query. Paridade completa de CRUD com o bot:
-   - Login via Telegram Login Widget (`POST /auth/telegram`, já existia
-     no backend) — token guardado em `localStorage`, `401` da API limpa
-     a sessão e redireciona pro `/login` (`src/api/client.ts`).
-   - Matérias: lista + criar/editar/apagar, com detecção de conflito de
-     horário (`409`) exibida no formulário; página de detalhe
-     (`/subjects/:id`) com frequência e notas da matéria.
-   - Atividades: lista com filtro trabalho/prova, criar/editar/apagar
-     (`activity_type` fixo na criação, não editável — mesma regra do
+1. **React site** (`web/`, 2026-08-24) — Vite + React + TypeScript,
+   React Router, TanStack Query. Full CRUD parity with the bot:
+   - Login via Telegram Login Widget (`POST /auth/telegram`, already
+     existed in the backend) — token stored in `localStorage`, a `401`
+     from the API clears the session and redirects to `/login`
+     (`src/api/client.ts`).
+   - Subjects: list + create/edit/delete, with schedule-conflict detection
+     (`409`) shown in the form; detail page (`/subjects/:id`) with the
+     subject's attendance and grades.
+   - Activities: list with assignment/exam filter, create/edit/delete
+     (`activity_type` fixed at creation, not editable — same rule as the
      bot).
-   - Faltas: lista, criar/apagar, editar só a quantidade (mesma
-     limitação do bot).
-   - Notas: lista, criar/editar/apagar.
-   - Sem biblioteca de UI — CSS simples e funcional; design autoral fica
-     pra uma fase futura separada (ver spec).
-   - `api/main.py` ganhou `CORSMiddleware` (não existia — a API nunca
-     tinha tido um consumidor de browser); nova env var opcional
-     `FRONTEND_ORIGINS` em `bot/core/settings.py`.
-   - Validado manualmente ponta a ponta contra a API local (SQLite):
-     login/logout, CRUD das 4 entidades, conflito de horário, 401 →
+   - Absences: list, create/delete, edit only the quantity (same
+     limitation as the bot).
+   - Grades: list, create/edit/delete.
+   - No UI library — plain, functional CSS; a custom design is deferred to
+     a separate future phase (see spec).
+   - `api/main.py` gained `CORSMiddleware` (didn't exist — the API never
+     had a browser consumer before); new optional env var
+     `FRONTEND_ORIGINS` in `bot/core/settings.py`.
+   - Manually validated end-to-end against the local API (SQLite):
+     login/logout, CRUD for the 4 entities, schedule conflict, 401 →
      redirect.
-2. **Testes automatizados do site** (2026-08-24) — Vitest + React Testing
-   Library + jsdom. Cobertura deliberadamente não-exaustiva: `client.ts`
-   (header de auth, 401, parsing de erro, 204), `AuthContext` (login/
-   logout/refresh de sessão) e um teste de componente completo
-   (list+form+conflito 409+delete) em `Subjects.test.tsx`, que serve de
-   referência de padrão pras outras 3 páginas em vez de ser copiado
-   1:1 nelas. Detalhes em `CLAUDE.md` → "Web frontend tests".
-3. **Redesign visual + navegação mobile** (2026-08-24) — tema escuro
-   estilo "dashboard" (Inter + Space Grotesk, acento gradiente roxo/azul,
-   `lucide-react` pros ícones), sidebar com navegação por ícone no
-   desktop. No mobile (`≤780px`): barra superior fina + barra de
-   navegação fixa embaixo (estilo app nativo) em vez da sidebar; as
-   tabelas de listagem (`≤720px`) viram uma lista de cards em vez de
-   tabela horizontal cortada.
-4. **Calculadora "quanto preciso tirar"** (2026-08-24) — em
-   `/subjects/:id`, dado as notas já lançadas de uma matéria, calcula a
-   média necessária nas notas que faltam pra bater uma média alvo.
-   Cálculo 100% client-side (mesma fórmula de `grade_service.get_average`
-   — média aritmética simples), sem endpoint novo.
-5. **Banner de risco de reprovação por falta no Dashboard** (2026-08-24)
-   — `GET /subjects` passou a embutir os mesmos campos computados de
+2. **Automated site tests** (2026-08-24) — Vitest + React Testing
+   Library + jsdom. Deliberately non-exhaustive coverage: `client.ts`
+   (auth header, 401, error parsing, 204), `AuthContext` (login/
+   logout/session refresh), and one full component test
+   (list+form+409 conflict+delete) in `Subjects.test.tsx`, which serves as
+   the reference pattern for the other 3 pages rather than being copied
+   1:1 onto them. Details in
+   [`../architecture/web.md`](../architecture/web.md) → "Tests".
+3. **Visual redesign + mobile navigation** (2026-08-24) — dark
+   "dashboard"-style theme (Inter + Space Grotesk, purple/blue gradient
+   accent, `lucide-react` for icons), sidebar with icon navigation on
+   desktop. On mobile (`≤780px`): a thin top bar + a fixed bottom nav bar
+   (native-app style) instead of the sidebar; listing tables
+   (`≤720px`) become a card list instead of a horizontally-cut table.
+4. **"What grade do I need" calculator** (2026-08-24) — on
+   `/subjects/:id`, given a subject's grades already entered, calculates
+   the average needed on the remaining grades to hit a target average.
+   100% client-side calculation (same formula as
+   `grade_service.get_average` — simple arithmetic mean), no new
+   endpoint.
+5. **Attendance-risk banner on the Dashboard** (2026-08-24)
+   — `GET /subjects` now embeds the same computed fields as
    `GET /subjects/{id}/attendance` (`percent`, `remaining_allowed`,
-   `at_risk`, `failed`) direto em `SubjectOut`, pra listar as matérias em
-   risco na tela inicial sem precisar de uma chamada extra por matéria.
-   Mudança de backend em `api/routers/subjects.py`/`api/schemas.py`
-   (`SubjectCreate`/`Update` não mudam), 2 testes novos em
+   `at_risk`, `failed`) directly in `SubjectOut`, so at-risk subjects can be
+   listed on the home screen without an extra call per subject. Backend
+   change in `api/routers/subjects.py`/`api/schemas.py`
+   (`SubjectCreate`/`Update` unchanged), 2 new tests in
    `tests/test_api.py`.
 
-## 🎯 Próximos passos
+## 🎯 Next steps
 
-- App Android (React Native/Expo) — ver "Ordem recomendada" abaixo.
-- Testes de componente das páginas restantes (Atividades/Faltas/Notas),
-  se algum bug real aparecer nelas ou se o padrão precisar ser validado
-  de novo — não são obrigatórios agora (mesmo shape do `Subjects.test.tsx`).
-- Deploy do site (depende de `roadmap-hosting.md`, ainda local/pausado).
+- Android app (React Native/Expo) — see "Recommended order" below.
+- Component tests for the remaining pages (Activities/Absences/Grades), if
+  a real bug shows up in them or the pattern needs re-validating — not
+  required right now (same shape as `Subjects.test.tsx`).
+- Site deployment (depends on `roadmap-hosting.md`, still local/paused).
 
-## Ordem recomendada (atualizada)
+## Recommended order (updated)
 
-1. ~~API primeiro~~ — **feito**, ver [`roadmap-api.md`](roadmap-api.md).
-2. ~~Site (React)~~ — **feito** (paridade completa de CRUD, ver acima).
-3. App Android (React Native/Expo) com o essencial (ver/gerenciar grade,
-   atividades, faltas, notas) + o widget de tela inicial
-   (`react-native-android-widget`) — motivo original da conversa, ainda
-   não começado.
-4. iOS e unificação de UI (React Native Web) só depois de validar o
-   resto.
+1. ~~API first~~ — **done**, see [`roadmap-api.md`](roadmap-api.md).
+2. ~~Site (React)~~ — **done** (full CRUD parity, see above).
+3. Android app (React Native/Expo) with the essentials (view/manage
+   schedule, activities, absences, grades) + the home-screen widget
+   (`react-native-android-widget`) — the original reason for this
+   conversation, not started yet.
+4. iOS and UI unification (React Native Web) only after validating the
+   rest.

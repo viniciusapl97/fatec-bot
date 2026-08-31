@@ -1,83 +1,87 @@
-# Spec: Frontend web + app Android/iOS
+# Spec: Web frontend + Android/iOS app
 
-Discutido e decidido em 2026-08-21. Ver [`roadmap-app.md`](../roadmap-app.md)
-para o status/próximos passos, e [`roadmap-api.md`](../roadmap-api.md) para
-o backend que sustenta os dois.
+Discussed and decided on 2026-08-21. See
+[`roadmap-app.md`](../roadmap-app.md) for status/next steps, and
+[`roadmap-api.md`](../roadmap-api.md) for the backend that supports both.
 
-A ideia evoluiu ao longo da conversa: começou como "só um site" → depois
-"site + widget Android" → decisão final "site + app completo (React
-Native), com widget de tela inicial, iOS talvez um dia".
+The idea evolved over the course of the conversation: started as "just a
+site" → then "site + Android widget" → final decision "site + full app
+(React Native), with a home-screen widget, iOS maybe someday".
 
-## A base: API por cima de `bot/services/`
+## The foundation: an API over `bot/services/`
 
-Toda a regra de negócio já está isolada em `bot/services/`, sem nenhuma
-dependência do Telegram — dá pra expor esses mesmos services por trás de
-uma API (FastAPI, `api/`) sem reescrever a lógica. **Isso é o que o site e
-o app têm em comum** — a UI de cada um é separada (ver stack abaixo), só a
-API é compartilhada. Ver [`specs/api-design.md`](api-design.md).
+All the business logic is already isolated in `bot/services/`, with no
+dependency on Telegram — those same services can be exposed behind an API
+(FastAPI, `api/`) without rewriting the logic. **That's what the site and
+the app have in common** — each one's UI is separate (see stack below),
+only the API is shared. See [`specs/api-design.md`](api-design.md).
 
-## Stack decidida
+## Chosen stack
 
 - **Site**: React.
-- **App**: React Native, via Expo (facilita o build local/sideload sem
-  conta de desenvolvedor). Android primeiro; iOS "um dia" fica bem mais
-  barato de adicionar depois por já estar no React Native, em vez de
-  começar do zero em Swift futuramente.
-- **React Native Web** é uma opção pra unificar o código de UI entre site e
-  app (usado em produção por apps grandes, ex. o X/Twitter novo) — mas não
-  é o ponto de partida recomendado. Começar com React puro no site e React
-  Native no app (compartilhando só os tipos/chamadas de API) é mais
-  simples; migrar pra RN Web depois é uma opção, não um requisito.
+- **App**: React Native, via Expo (makes a local build/sideload without a
+  developer account easier). Android first; iOS "someday" becomes much
+  cheaper to add later since it's already on React Native, instead of
+  starting from scratch in Swift down the line.
+- **React Native Web** is an option to unify the UI code between the site
+  and the app (used in production by large apps, e.g. the new X/Twitter) —
+  but it's not the recommended starting point. Starting with plain React on
+  the site and React Native on the app (sharing only the API types/calls)
+  is simpler; migrating to RN Web later is an option, not a requirement.
 
-## Widget de tela inicial (o motivo original de cogitar um app nativo)
+## Home-screen widget (the original reason a native app was considered)
 
-O motor JS do React Native roda dentro do processo do app — um widget é
-renderizado pelo *sistema operacional* fora desse processo, então **sempre
-vai precisar de uma peça nativa**, mesmo com React Native:
-- **Android**: lib
+React Native's JS engine runs inside the app's process — a widget is
+rendered by the *operating system* outside that process, so it **always
+needs a native piece**, even with React Native:
+- **Android**: the
   [`react-native-android-widget`](https://github.com/sAleksovski/react-native-android-widget)
-  — desenha o layout do widget em JSX, ela compila pra views nativas em
-  build time. É a melhor opção atual pra esse cenário — não é "rodar JS
-  dentro do widget".
-- **iOS** (se um dia acontecer): a Apple exige SwiftUI pra widgets, sem
-  exceção — não existe bridge de React Native pra isso. Não tem como fugir
-  de Swift nessa parte específica, mesmo com o app todo em React Native.
+  library — draws the widget layout in JSX, it compiles to native views at
+  build time. It's the best current option for this scenario — not "run JS
+  inside the widget".
+- **iOS** (if it ever happens): Apple requires SwiftUI for widgets, no
+  exceptions — there's no React Native bridge for this. There's no way
+  around Swift for this specific part, even with the whole app in React
+  Native.
 
-## Autenticação — diferente pro site e pro app
+## Authentication — different for the site and the app
 
-- **Site**: como o bot serve qualquer usuário do Telegram (não é só de uso
-  pessoal), o caminho certo é o **Telegram Login Widget** — usuário clica
-  "Entrar com Telegram", o Telegram autentica e devolve um payload
-  assinado (`user_id`, nome, username, foto) pro backend validar o hash.
-  Zero senha nova pra gerenciar, e o `user_id` já bate com `User.user_id`
-  no banco. **Já implementado no backend** (`POST /auth/telegram`, ver
-  [`specs/api-design.md`](api-design.md)) — adiantado antes do site
-  existir; falta só o botão/fluxo no frontend quando o site começar.
-- **App/widget**: como esse app é só pra uso pessoal (sideload, sem loja),
-  não vale a pena replicar o fluxo de Login Widget — mais simples é o
-  **token de acesso pessoal** vinculado ao `user_id`, colado uma vez na
-  configuração do app. **Já implementado** — ver
+- **Site**: since the bot serves any Telegram user (not just personal
+  use), the right approach is the **Telegram Login Widget** — the user
+  clicks "Log in with Telegram", Telegram authenticates them and returns a
+  signed payload (`user_id`, name, username, photo) for the backend to
+  validate the hash. Zero new password to manage, and `user_id` already
+  matches `User.user_id` in the database. **Already implemented in the
+  backend** (`POST /auth/telegram`, see
+  [`specs/api-design.md`](api-design.md)) — built ahead of the site
+  existing; only the button/flow on the frontend is left, once the site
+  starts.
+- **App/widget**: since this app is only for personal use (sideload, no
+  store), it's not worth replicating the Login Widget flow — simpler is a
+  **personal access token** tied to `user_id`, pasted once into the app's
+  settings. **Already implemented** — see
   [`specs/api-design.md`](api-design.md).
 
-## Estimativa por nível de ambição
+## Estimate by ambition level
 
-- MVP somente-leitura (login + ver grade/notas/faltas/frequência/calendário),
-  só no site: alguns fins de semana.
-- Paridade completa (criar/editar/apagar tudo, igual ao bot) no site e/ou
-  no app: várias semanas, part-time — o app soma tempo extra se React
-  Native/Expo for novidade.
-- Widget Android funcionando (`react-native-android-widget`): escopo
-  pequeno uma vez que a API já existe — não precisa esperar o app inteiro
-  ficar pronto pra fazer o widget.
-- Design autoral + gráficos de evolução + iOS + tempo real ("muito foda"):
-  meses — a parte mais aberta, sem teto.
+- Read-only MVP (login + view schedule/grades/absences/attendance/
+  calendar), site only: a few weekends.
+- Full parity (create/edit/delete everything, same as the bot) on the site
+  and/or the app: several weeks, part-time — the app adds extra time if
+  React Native/Expo is new territory.
+- Working Android widget (`react-native-android-widget`): small scope once
+  the API already exists — doesn't need to wait for the whole app to be
+  ready to build the widget.
+- Custom design + progress charts + iOS + real-time ("really ambitious"):
+  months — the most open-ended part, no ceiling.
 
-## Ordem recomendada
+## Recommended order
 
-1. API primeiro (FastAPI sobre `bot/services/`) — **em andamento**, ver
+1. API first (FastAPI over `bot/services/`) — **in progress**, see
    [`roadmap-api.md`](../roadmap-api.md).
-2. App Android (React Native/Expo) com o essencial (ver/gerenciar grade,
-   atividades, faltas, notas) + o widget — é o que motivou a conversa,
-   então é o que traz retorno mais rápido.
-3. Site como consumidor adicional da mesma API, quando fizer sentido.
-4. iOS e unificação de UI (React Native Web) só depois de validar o resto.
+2. Android app (React Native/Expo) with the essentials (view/manage
+   schedule, activities, absences, grades) + the widget — the reason this
+   conversation started, so it's what pays off fastest.
+3. Site as an additional consumer of the same API, when it makes sense.
+4. iOS and UI unification (React Native Web) only after validating the
+   rest.

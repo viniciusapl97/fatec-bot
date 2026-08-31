@@ -1,114 +1,117 @@
 # Roadmap — API (`api/`)
 
-Ver [`ROADMAP.md`](ROADMAP.md) para o índice geral entre frentes, e
-[`specs/api-design.md`](specs/api-design.md) para as decisões de design
-(autenticação, separação de schemas, pegadinhas de teste encontradas).
+See [`ROADMAP.md`](ROADMAP.md) for the general index across areas, and
+[`specs/api-design.md`](specs/api-design.md) for the design decisions
+(authentication, schema separation, testing gotchas found).
 
-Última atualização: 2026-08-21.
+Last updated: 2026-08-21.
 
-## ✅ Feito
+## ✅ Done
 
-1. **Primeira fatia da API** (2026-08-21) — FastAPI expondo
-   `bot/services/` por HTTP, sem duplicar lógica nenhuma:
-   - Autenticação por token de acesso pessoal. Novo model `AccessToken`
-     (`bot/db/models.py`), comandos `/tokendeacesso` (gera, mostra uma
-     vez só) e `/revogartokens` (invalida todos de uma vez) no bot.
+1. **First API slice** (2026-08-21) — FastAPI exposing `bot/services/` over
+   HTTP, without duplicating any logic:
+   - Authentication via personal access token. New `AccessToken` model
+     (`bot/db/models.py`), `/tokendeacesso` (generates, shows once) and
+     `/revogartokens` (invalidates all at once) commands on the bot.
      Migration `e00d525f47d4_adiciona_access_tokens`.
-   - Endpoints: `GET /health` (sem auth), `GET /me`, `GET /subjects`.
-   - `api/deps.py` (dependências compartilhadas `get_db`/`get_current_user`),
-     `api/schemas.py` (modelos Pydantic de resposta).
-   - 12 testes novos (`tests/test_access_token_service.py`,
+   - Endpoints: `GET /health` (no auth), `GET /me`, `GET /subjects`.
+   - `api/deps.py` (shared dependencies `get_db`/`get_current_user`),
+     `api/schemas.py` (Pydantic response models).
+   - 12 new tests (`tests/test_access_token_service.py`,
      `tests/test_api.py`).
-2. **Mais endpoints de leitura** (2026-08-21):
-   - `GET /activities` — aceita `?activity_type=trabalho|prova`.
-   - `GET /absences` — nova `absence_service.get_absences_by_user` (só
-     existia por matéria).
+2. **More read endpoints** (2026-08-21):
+   - `GET /activities` — accepts `?activity_type=trabalho|prova`.
+   - `GET /absences` — new `absence_service.get_absences_by_user` (used to
+     only exist per-subject).
    - `GET /grades`.
-   - Os três embutem `subject_name` na resposta (montado no router, não é
-     atributo direto do model).
-   - 9 testes novos (2 em `tests/test_absence_service.py`, 7 em
-     `tests/test_api.py`, incluindo o caso que expôs o bug de isolamento
-     de teste documentado em `specs/api-design.md`).
-3. **Frequência e notas por matéria** (2026-08-21):
-   - `GET /subjects/{id}/attendance` — reaproveita
-     `subject_service.get_attendance_info`; campos de percentual/faltas
-     restantes ficam `null` se a matéria ainda não tem `total_classes`
-     definido (mesma semântica do bot).
-   - `GET /subjects/{id}/grades` — lista de notas da matéria + média
-     (`grade_service.get_average`), embutidas num único payload em vez de
-     achatadas na listagem geral de `/grades`.
-   - Ambos checam posse da matéria (`subject.user_id == user.user_id`) e
-     retornam 404 (não 403) tanto pra matéria inexistente quanto pra
-     matéria de outro usuário, pra não vazar quais IDs existem.
-   - 10 testes novos em `tests/test_api.py`.
-4. **Endpoints de escrita** (2026-08-21) — POST/PATCH/DELETE pras 4
-   entidades, paridade completa de CRUD com o bot:
-   - Matérias: `POST /subjects`, `PATCH /subjects/{id}`,
-     `DELETE /subjects/{id}`. Checa conflito de horário no mesmo dia (409),
-     igual `/addmateria`/edição no bot — só quando dia+início+fim
-     resultantes (após o merge do PATCH com o valor atual) estão todos
-     definidos. `PATCH` usa `exclude_unset` do Pydantic pra atualizar só os
-     campos enviados, distinguindo "campo omitido" de "campo enviado como
-     `null`" (usado pra limpar `total_classes`).
-   - Atividades: `POST /activities`, `PATCH /activities/{id}` (inclui
-     mover pra outra matéria via `subject_id`), `DELETE /activities/{id}`.
-     `activity_type` não é editável (mesma regra do bot — é fixado na
-     criação).
-   - Faltas: `POST /absences`, `PATCH /absences/{id}` (só `quantity`,
-     mesma limitação do bot), `DELETE /absences/{id}` — os três
-     recalculam `Subject.total_absences` via `absence_service` (não
-     duplicado no router).
-   - Notas: `POST /grades`, `PATCH /grades/{id}` (nome e valor juntos,
-     mesma assinatura de `grade_service.update_grade`), `DELETE
+   - All three embed `subject_name` in the response (assembled in the
+     router, not a direct model attribute).
+   - 9 new tests (2 in `tests/test_absence_service.py`, 7 in
+     `tests/test_api.py`, including the case that exposed the test
+     isolation bug documented in `specs/api-design.md`).
+3. **Attendance and grades per subject** (2026-08-21):
+   - `GET /subjects/{id}/attendance` — reuses
+     `subject_service.get_attendance_info`; the percentage/remaining-absence
+     fields come back `null` if the subject doesn't have `total_classes`
+     set yet (same semantics as the bot).
+   - `GET /subjects/{id}/grades` — the subject's grade list + average
+     (`grade_service.get_average`), bundled into a single payload instead
+     of flattened into the general `/grades` listing.
+   - Both check ownership of the subject (`subject.user_id ==
+     user.user_id`) and return 404 (not 403) both for a nonexistent
+     subject and for another user's subject, so as not to leak which IDs
+     exist.
+   - 10 new tests in `tests/test_api.py`.
+4. **Write endpoints** (2026-08-21) — POST/PATCH/DELETE for the 4
+   entities, full CRUD parity with the bot:
+   - Subjects: `POST /subjects`, `PATCH /subjects/{id}`,
+     `DELETE /subjects/{id}`. Checks same-day schedule conflicts (409),
+     just like `/addmateria`/editing on the bot — only when the resulting
+     day+start+end (after merging the PATCH with the current value) are
+     all defined. `PATCH` uses Pydantic's `exclude_unset` to update only
+     the fields sent, distinguishing "field omitted" from "field sent as
+     `null`" (used to clear `total_classes`).
+   - Activities: `POST /activities`, `PATCH /activities/{id}` (including
+     moving to another subject via `subject_id`), `DELETE
+     /activities/{id}`. `activity_type` isn't editable (same rule as the
+     bot — it's fixed at creation).
+   - Absences: `POST /absences`, `PATCH /absences/{id}` (only `quantity`,
+     same limitation as the bot), `DELETE /absences/{id}` — all three
+     recompute `Subject.total_absences` via `absence_service` (not
+     duplicated in the router).
+   - Grades: `POST /grades`, `PATCH /grades/{id}` (name and value
+     together, same signature as `grade_service.update_grade`), `DELETE
      /grades/{id}`.
-   - Todo endpoint que recebe `subject_id` (no corpo ou na URL) valida
-     posse com o novo `api/deps.get_owned_subject` — 404 se a matéria não
-     existir ou for de outro usuário. Movido de `subjects.py` pra
-     `deps.py` porque activities/absences/grades passaram a precisar da
-     mesma checagem.
-   - 49 testes de API no total agora (`tests/test_api.py`), cobrindo
-     autenticação, posse, validação (dia da semana inválido, quantidade
-     ≤0, nota negativa) e conflito de horário.
+   - Every endpoint that receives a `subject_id` (in the body or the URL)
+     validates ownership with the new `api/deps.get_owned_subject` — 404 if
+     the subject doesn't exist or belongs to another user. Moved from
+     `subjects.py` to `deps.py` because activities/absences/grades also
+     needed the same check.
+   - 49 API tests in total now (`tests/test_api.py`), covering
+     authentication, ownership, validation (invalid weekday, quantity ≤0,
+     negative grade), and schedule conflicts.
 5. **Telegram Login Widget** (2026-08-21) — `POST /auth/telegram`, login
-   pro site (adiantado antes do site existir, por pedido explícito — ver
-   [`specs/api-design.md`](specs/api-design.md) pra decisão completa):
-   - Valida a assinatura HMAC-SHA256 do payload do widget contra
-     `SHA256(TELEGRAM_TOKEN)`, rejeita `auth_date` com mais de 24h.
-   - Não cria um mecanismo de sessão novo: resolve o usuário com
-     `user_service.get_or_create_user` e emite um `AccessToken` comum
-     (mesmo mecanismo do `/tokendeacesso` do bot) — o site autentica
-     depois exatamente como o app, via Bearer token.
-   - 5 testes novos em `tests/test_api.py` (usuário novo, usuário
-     existente, payload adulterado, hash errado, `auth_date` expirado).
+   for the site (built ahead of the site itself, by explicit request — see
+   [`specs/api-design.md`](specs/api-design.md) for the full decision):
+   - Validates the widget payload's HMAC-SHA256 signature against
+     `SHA256(TELEGRAM_TOKEN)`, rejects an `auth_date` older than 24h.
+   - Doesn't create a new session mechanism: resolves the user via
+     `user_service.get_or_create_user` and issues a regular `AccessToken`
+     (same mechanism as the bot's `/tokendeacesso`) — the site later
+     authenticates exactly like the app, via Bearer token.
+   - 5 new tests in `tests/test_api.py` (new user, existing user, tampered
+     payload, wrong hash, expired `auth_date`).
 
-6. **CORS** (2026-08-24) — `CORSMiddleware` em `api/main.py`, liberando a
-   origem do site React (`web/`, ver [`roadmap-app.md`](roadmap-app.md)).
-   Nova env var opcional `FRONTEND_ORIGINS` (`bot/core/settings.py`),
-   default `http://localhost:5173`. Sem `allow_credentials` — auth é por
-   Bearer token, não cookie.
-7. **`SubjectOut` ganhou os campos de risco de falta** (2026-08-24) —
-   `percent`, `remaining_allowed`, `at_risk`, `failed` (mesmos campos de
-   `AttendanceOut`) agora vêm embutidos em `GET/POST/PATCH /subjects`,
-   não só em `GET /subjects/{id}/attendance`. Motivo: o banner de risco
-   no dashboard do site (`roadmap-app.md`) precisa dessa info pra todas
-   as matérias de uma vez, sem N chamadas extras. `api/routers/subjects.py`
-   ganhou um `_to_out()` (mesmo padrão dos outros routers) — antes os 3
-   endpoints devolviam o `Subject` do SQLAlchemy direto via
-   `from_attributes`, o que não dá pra computar campos derivados.
+6. **CORS** (2026-08-24) — `CORSMiddleware` in `api/main.py`, allowing the
+   React site's origin (`web/`, see [`roadmap-app.md`](roadmap-app.md)).
+   New optional env var `FRONTEND_ORIGINS` (`bot/core/settings.py`),
+   default `http://localhost:5173`. No `allow_credentials` — auth is via
+   Bearer token, not cookies.
+7. **`SubjectOut` gained the attendance-risk fields** (2026-08-24) —
+   `percent`, `remaining_allowed`, `at_risk`, `failed` (the same fields as
+   `AttendanceOut`) are now embedded in `GET/POST/PATCH /subjects`, not
+   just `GET /subjects/{id}/attendance`. Reason: the risk banner on the
+   site's dashboard (`roadmap-app.md`) needs this info for every subject
+   at once, without N extra calls. `api/routers/subjects.py` gained a
+   `_to_out()` (same pattern as the other routers) — the 3 endpoints used
+   to return the SQLAlchemy `Subject` directly via `from_attributes`,
+   which can't compute derived fields.
 
-Ver `git log` para o histórico completo de commits de cada item.
+See `git log` for the full commit history of each item.
 
-## 🎯 Próximos passos
+## 🎯 Next steps
 
-- Decidir se listagens ganham paginação real — a API não tem o limite de
-  4096 caracteres do Telegram, mas listas grandes ainda merecem
-  paginação por performance/UX.
-- Expiração/rotação para os tokens emitidos por `/auth/telegram` — ainda
-  não têm nenhuma (mesmo mecanismo do `/tokendeacesso`, que também não
-  expira). O site (`web/`, ver [`roadmap-app.md`](roadmap-app.md)) já
-  guarda o token em `localStorage`; decisão de expiração adiada.
+- Decide whether listings get real pagination — the API doesn't have
+  Telegram's 4096-character limit, but large lists still deserve
+  pagination for performance/UX. Spec in progress (Draft):
+  [`features/api-pagination/`](features/api-pagination/).
+- Expiration/rotation for tokens issued by `/auth/telegram` — they don't
+  have any yet (same mechanism as `/tokendeacesso`, which also doesn't
+  expire). The site (`web/`, see [`roadmap-app.md`](roadmap-app.md))
+  already stores the token in `localStorage`; the expiration decision was
+  deferred.
 
-## Lembrete operacional
+## Operational reminder
 
-Toda vez que um model novo for adicionado (ex.: `AccessToken`), precisa de
-migration — ver [`specs/alembic-migrations.md`](specs/alembic-migrations.md).
+Every time a new model is added (e.g. `AccessToken`), it needs a migration
+— see [`specs/alembic-migrations.md`](specs/alembic-migrations.md).

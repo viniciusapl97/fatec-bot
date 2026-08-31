@@ -1,81 +1,84 @@
-# Spec: Migrations com Alembic
+# Spec: Migrations with Alembic
 
-Decisão tomada em 2026-08-21. Ver o item correspondente em
-[`roadmap-bot.md`](../roadmap-bot.md) para o status/changelog resumido.
+Decision made on 2026-08-21. See the matching item in
+[`roadmap-bot.md`](../roadmap-bot.md) for the status/changelog summary.
 
-## Problema
+## Problem
 
-O bot criava/atualizava as tabelas com `Base.metadata.create_all(bind=engine)`
-toda vez que subia (`main.py`) ou que `seed_db.py` rodava. Isso funciona pra
-criar tabelas que não existem, mas **não migra colunas em tabelas que já
-existem** — cada mudança de schema em produção dependia de alguém lembrar de
-rodar um `ALTER TABLE` manual. Já tínhamos acumulado duas pendências assim
-(`notifications_enabled`, `notification_hour`) antes de resolver isso de vez.
+The bot created/updated tables with `Base.metadata.create_all(bind=engine)`
+every time it started up (`main.py`) or `seed_db.py` ran. That works for
+creating tables that don't exist, but **does not migrate columns on tables
+that already exist** — every schema change in production depended on
+someone remembering to run a manual `ALTER TABLE`. Two such pending changes
+had already piled up (`notifications_enabled`, `notification_hour`) before
+this was fixed for good.
 
-## Decisão
+## Decision
 
-Adotar [Alembic](https://alembic.sqlalchemy.org/) como dono do schema.
-`Base.metadata.create_all()` foi removido de `main.py` e `seed_db.py` —
-migrations passam a ser a única forma de criar/alterar tabelas.
+Adopt [Alembic](https://alembic.sqlalchemy.org/) as the owner of the
+schema. `Base.metadata.create_all()` was removed from `main.py` and
+`seed_db.py` — migrations are now the only way to create/alter tables.
 
-- `migrations/env.py` importa `bot.db.base.Base` + `bot.db.models` (pra
-  `Base.metadata` conter todas as tabelas) e define `sqlalchemy.url` em
-  runtime a partir de `bot.core.settings.DATABASE_URL` — as mesmas
-  variáveis de ambiente do resto do projeto, nada duplicado/hardcoded em
+- `migrations/env.py` imports `bot.db.base.Base` + `bot.db.models` (so
+  `Base.metadata` contains every table) and sets `sqlalchemy.url` at
+  runtime from `bot.core.settings.DATABASE_URL` — the same environment
+  variables as the rest of the project, nothing duplicated/hardcoded in
   `alembic.ini`.
-- Migration baseline (`migrations/versions/6cde7bf58518_*.py`) cobre as 7
-  tabelas que existiam na hora da adoção.
+- The baseline migration (`migrations/versions/6cde7bf58518_*.py`) covers
+  the 7 tables that existed at adoption time.
 
-## Adotando em um banco que já existe (dev ou produção)
+## Adopting on a database that already exists (dev or production)
 
-Um banco criado antes do Alembic existir (via `create_all()`, como o que
-você já está rodando localmente) **não deve rodar `alembic upgrade head`
-direto** — isso tentaria `CREATE TABLE` em tabelas que já existem e falharia.
+A database created before Alembic existed (via `create_all()`, like the
+one you're already running locally) **should not run `alembic upgrade
+head` directly** — that would try to `CREATE TABLE` on tables that already
+exist and fail.
 
 ```bash
-# Uma única vez, no banco que já existe:
+# Once, on the database that already exists:
 alembic stamp head
 
-# Dali em diante, sempre:
+# From then on, always:
 alembic upgrade head
 ```
 
-`stamp head` marca o banco como "já está na versão mais recente" sem
-executar nenhum DDL — como a migration baseline já inclui
-`notifications_enabled` e `notification_hour`, esse passo único também
-resolve as duas pendências de `ALTER TABLE` manual que tínhamos.
+`stamp head` marks the database as "already at the latest version" without
+running any DDL — since the baseline migration already includes
+`notifications_enabled` and `notification_hour`, this single step also
+resolves the two manual `ALTER TABLE` items that were pending.
 
-## Validação
+## Validation
 
-Testado de ponta a ponta contra um Postgres real (container Docker
-`postgres:16-alpine`, descartado ao final — sem dependência nova pro
-projeto):
-1. `alembic upgrade head` do zero → tabelas criadas certinho.
-2. `alembic check` → sem diferença pendente entre os models e o banco.
-3. `alembic downgrade base` → limpo, remove tudo.
-4. Simulado o estado real do usuário: tabelas criadas via `create_all()`
-   (sem Alembic) → `alembic stamp head` → dados intactos, `alembic check`
-   continua sem diferença.
-5. Rodei operações reais dos `services/` (criar usuário, matéria,
-   atividade, falta, nota, lembrete, calcular frequência) direto sobre o
-   schema criado pela migration — tudo funcionando.
+Tested end-to-end against a real Postgres (Docker container
+`postgres:16-alpine`, discarded afterward — no new dependency for the
+project):
+1. `alembic upgrade head` from scratch → tables created correctly.
+2. `alembic check` → no pending difference between the models and the
+   database.
+3. `alembic downgrade base` → clean, removes everything.
+4. Simulated the user's actual state: tables created via `create_all()`
+   (without Alembic) → `alembic stamp head` → data intact, `alembic check`
+   still reports no difference.
+5. Ran real `services/` operations (create user, subject, activity,
+   absence, grade, reminder, compute attendance) directly against the
+   schema created by the migration — everything working.
 
-A suíte pytest (SQLite) não usa `main.py`/`seed_db.py` diretamente, então
-não foi afetada por essas mudanças.
+The pytest suite (SQLite) doesn't use `main.py`/`seed_db.py` directly, so
+it was unaffected by these changes.
 
-## Efeito colateral: `requirements.txt` estava em UTF-16
+## Side effect: `requirements.txt` was in UTF-16
 
-Ao tentar só adicionar a linha do `alembic` em `requirements.txt`, a
-ferramenta de edição preservou a codificação original do arquivo — que
-sempre esteve em UTF-16 (provavelmente gerado via `pip freeze` no
-PowerShell do Windows; por isso `cat`/`grep` sempre mostraram ele
-"espaçado" quando alguém olhava o arquivo num terminal Linux/macOS). O
-resultado foi um `requirements.txt` em UTF-16 com a linha nova, o que quebra
-o `pip` (`ERROR: Invalid requirement` com bytes `\x00` literais no meio do
-nome do pacote).
+When trying to just add the `alembic` line to `requirements.txt`, the edit
+tool preserved the file's original encoding — which had always been
+UTF-16 (probably generated via `pip freeze` on Windows PowerShell; that's
+why `cat`/`grep` always showed it "spaced out" whenever someone looked at
+the file from a Linux/macOS terminal). The result was a UTF-16
+`requirements.txt` with the new line added, which breaks `pip` (`ERROR:
+Invalid requirement` with literal `\x00` bytes in the middle of the package
+name).
 
-Corrigido reescrevendo o arquivo inteiro via heredoc de shell
-(`cat > requirements.txt << 'EOF' ... EOF`), que força UTF-8 independente do
-que já estava no arquivo. Esse é o método a usar sempre que precisar
-corrigir a codificação de um arquivo não-UTF-8 — editar normalmente
-preserva a codificação original.
+Fixed by rewriting the whole file via a shell heredoc
+(`cat > requirements.txt << 'EOF' ... EOF`), which forces UTF-8 regardless
+of what was already in the file. This is the method to use whenever a
+non-UTF-8 file's encoding needs fixing — a normal edit preserves the
+original encoding.

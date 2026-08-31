@@ -1,30 +1,31 @@
-# Roadmap — Hospedagem
+# Roadmap — Hosting
 
-Ver [`ROADMAP.md`](ROADMAP.md) para o índice geral entre frentes.
+See [`ROADMAP.md`](ROADMAP.md) for the general index across areas.
 
-Última atualização: 2026-08-21.
+Last updated: 2026-08-21.
 
-## Status: ainda rodando localmente
+## Status: still running locally
 
-Decisão em aberto (2026-08-21): o usuário quer aproveitar o assunto pra
-estudar AWS, usando o free tier (EC2 t2/t3.micro + RDS Postgres
-t3/t4g.micro, ambos elegíveis por 12 meses em conta nova). Ainda não
-começou — avisou que "por enquanto não" quando perguntado se queria
-seguir com o setup.
+Open decision (2026-08-21): the user wants to use this as an opportunity to
+learn AWS, using the free tier (EC2 t2/t3.micro + RDS Postgres
+t3/t4g.micro, both eligible for 12 months on a new account). Not started
+yet — said "not for now" when asked whether they wanted to proceed with the
+setup.
 
-## Plano combinado, quando retomar
+## Combined plan, when resumed
 
-1. Criar um budget alert primeiro (antes de qualquer recurso).
-2. IAM user próprio (não usar a conta root).
-3. VPC/Security Groups (pode usar a VPC default pra começar).
-4. EC2 — subir o bot como `systemd` service.
-5. RDS Postgres — migrar do banco local pra ele (`alembic upgrade head`
-   no banco novo, ver [`specs/alembic-migrations.md`](specs/alembic-migrations.md)).
-6. CloudWatch pros logs.
+1. Create a budget alert first (before any resource).
+2. A dedicated IAM user (not the root account).
+3. VPC/Security Groups (the default VPC is fine to start).
+4. EC2 — run the bot as a `systemd` service.
+5. RDS Postgres — migrate from the local database to it (`alembic upgrade
+   head` on the new database, see
+   [`specs/alembic-migrations.md`](specs/alembic-migrations.md)).
+6. CloudWatch for logs.
 
-## Nota pra quando a API/site/app entrarem em produção
+## Note for when the API/site/app go to production
 
-Esse plano cobre só o bot. Quando a API (`api/`) for pra produção
-também, ela pode rodar na mesma EC2 (outro processo, ex. via
-`systemd`/`nginx` na frente) ou em outro lugar — ainda não decidido, não
-é urgente enquanto só o bot está em produção.
+This plan only covers the bot. When the API (`api/`) also goes to
+production, it can run on the same EC2 instance (another process, e.g. via
+`systemd`/`nginx` in front) or somewhere else — not decided yet, not urgent
+while only the bot is in production.

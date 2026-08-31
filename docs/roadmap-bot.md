@@ -1,125 +1,123 @@
 # Roadmap — Bot (Telegram)
 
-Ver [`ROADMAP.md`](ROADMAP.md) para o índice geral entre frentes.
+See [`ROADMAP.md`](ROADMAP.md) for the general index across areas.
 
-Última atualização: 2026-08-21.
+Last updated: 2026-08-21.
 
-## ✅ Feito
+## ✅ Done
 
-Revisão de código completa (2026-08-21) encontrou e corrigiu 4 bugs
-críticos que quebravam o bot em produção:
-- `dialogs.py` sem várias constantes referenciadas por
-  `activity_handler.py` e `subject_handler.py` — `/gerenciartrabalhos` e
-  `/gerenciarprovas` estavam 100% quebrados (`AttributeError`).
-- `/cancelar` quebrado em `/broadcast`, `/lembrar` e `/bug` (fallback
-  passava uma string do `dialogs` como callback do `CommandHandler` em vez
-  de uma função).
-- Hacks de `Update`/`CallbackQuery` falsos em `activity_handler.py` e
-  `grade_handler.py` que quebravam ao recarregar a tela após editar uma
-  atividade ou nota.
+A full code review (2026-08-21) found and fixed 4 critical bugs that broke
+the bot in production:
+- `dialogs.py` was missing several constants referenced by
+  `activity_handler.py` and `subject_handler.py` — `/gerenciartrabalhos` and
+  `/gerenciarprovas` were 100% broken (`AttributeError`).
+- `/cancelar` was broken in `/broadcast`, `/lembrar`, and `/bug` (the
+  fallback passed a `dialogs` string as the `CommandHandler`'s callback
+  instead of a function).
+- Fake `Update`/`CallbackQuery` hacks in `activity_handler.py` and
+  `grade_handler.py` that broke when reloading the screen after editing an
+  activity or a grade.
 
-Depois da correção dos bugs, implementado nesta ordem:
+After fixing the bugs, implemented in this order:
 
-1. Fuso horário (`America/Sao_Paulo`) aplicado via `Defaults(tzinfo=...)`
-   — corrigiu o lembrete diário de prazos, que disparava no horário
-   errado.
-2. `conversation_timeout` (10 min) em todos os `ConversationHandler`s —
-   evita que uma conversa abandonada fique presa pra sempre.
-3. Persistência dos lembretes personalizados (`/lembrar`) — antes viviam
-   só em memória e somem num restart; agora ficam na tabela `reminders` e
-   são reagendados na inicialização (`main.py:reschedule_pending_reminders`).
-4. `%` de frequência por matéria (campo opcional `total_classes` +
-   `subject_service.get_attendance_info`) e média de notas
-   (`grade_service.get_average`) — aparecem em `/faltas`, `/relatorio` e
+1. Timezone (`America/Sao_Paulo`) applied via `Defaults(tzinfo=...)` — fixed
+   the daily deadline reminder, which was firing at the wrong time.
+2. `conversation_timeout` (10 min) on every `ConversationHandler` — prevents
+   an abandoned conversation from staying stuck forever.
+3. Persistence of custom reminders (`/lembrar`) — used to live only in
+   memory and vanish on a restart; now they live in the `reminders` table
+   and get rescheduled on startup
+   (`main.py:reschedule_pending_reminders`).
+4. Attendance `%` per subject (optional `total_classes` field +
+   `subject_service.get_attendance_info`) and grade average
+   (`grade_service.get_average`) — shown in `/faltas`, `/relatorio`, and
    `/gerenciarnotas`.
-5. `/exportar` — baixa um JSON com tudo do usuário (matérias, atividades,
-   faltas, notas, lembretes pendentes).
-6. Suíte de testes unitários (`tests/`, pytest, SQLite em memória)
-   cobrindo toda a camada `bot/services/`.
-7. `CLAUDE.md` e `docs/ROADMAP.md`.
-8. `/meuslembretes` — lista os lembretes pendentes do usuário com um botão
-   de cancelar cada um; ao cancelar, remove tanto o registro no banco
-   quanto o job agendado em memória (`job_queue.get_jobs_by_name` +
-   `schedule_removal()`), senão o lembrete dispararia mesmo cancelado.
-9. `/privacidade` — implementado de verdade (antes só era citado no
-   `/help`, sem handler). Texto em `dialogs.PRIVACY_POLICY_TEXT`,
-   informativo, não é uma política jurídica formal — revisar/atualizar se
-   o que o bot coleta ou compartilha mudar.
-10. Conflito de horário no `/addmateria` manual — nova
-    `subject_service.check_conflict_with_existing` (mesma lógica de
-    sobreposição do `course_service.check_schedule_conflict`, mas
-    comparando com as matérias já cadastradas do usuário, não com o
-    catálogo). Se colidir, avisa qual matéria conflita e pede um novo
-    horário de início (volta pro estado `START_TIME` da conversa).
-11. Edição de horário de matéria em `/gerenciarmaterias` — a lógica de
-    conversão/validação de `start_time`/`end_time` já existia em
-    `receive_field_update` (não usada, faltavam os botões). Adicionados
-    os botões "Horário de Início"/"Horário de Término" em
-    `build_subject_edit_view`, e a edição agora passa pela mesma checagem
-    de conflito do item 10 — `check_conflict_with_existing` ganhou o
-    parâmetro `exclude_subject_id` pra a matéria não colidir consigo
-    mesma.
-12. Resumo semanal automático — job `send_weekly_summary_job`
-    (`bot/jobs.py`) roda toda segunda às 08:00 (`job_queue.run_daily(...,
-    days=(1,))`; atenção: no python-telegram-bot v20+ `days` é
-    0-6=domingo-sábado, não a convenção antiga de segunda-domingo) e
-    manda pra cada usuário cadastrado o mesmo resumo do `/semana`.
-    Extraído `build_week_summary_message(db, user)` de `common.py` pra
-    ser reaproveitado tanto pelo comando quanto pelo job.
-13. `/notificacoes` — liga/desliga os avisos automáticos de prazo por
-    usuário (`User.notifications_enabled`, default `True`). Comando +
-    botão de alternância; `check_deadlines_job` pula quem desativou via
-    `user_service.get_user_ids_with_notifications_disabled`. **Bônus: ao
-    testar isso encontrei e corrigi um bug real e pré-existente** —
-    `check_deadlines_job` chamava
-    `activity_service.get_upcoming_activities`, mas essa função sempre
-    esteve definida em `user_service.py`, não em `activity_service.py`. O
-    job diário de lembretes de prazo vinha estourando `AttributeError`
-    (engolido pelo APScheduler) toda vez que rodava — os lembretes de
-    "vence amanhã"/"vence em 3 dias" nunca tinham sido entregues de
-    verdade em produção. Corrigido.
-14. `/exportarcalendario` — gera um `.ics` (iCalendar/RFC 5545) com os
-    trabalhos e provas do usuário, pra importar no Google Agenda/Apple
-    Calendário/Outlook. É um retrato do momento (snapshot baixável), não
-    uma assinatura ao vivo — o bot não tem servidor HTTP público pra
-    hospedar uma URL de calendário que os apps re-sincronizem sozinhos.
-    Gerado à mão em `export_service.build_activities_ics` (escaping e
-    "line folding" do RFC 5545 implementados na unha, sem dependência
-    nova). **Bug real encontrado e corrigido**: a primeira versão do
-    handler montava o `.ics` fora do `with SessionLocal()`, e como isso
-    acessa `activity.subject.name` (lazy load), quebrava com
-    `DetachedInstanceError` assim que a sessão fechava.
-15. `/stats` pra admin — contagens gerais (`bot/services/stats_service.py`):
-    usuários cadastrados, matérias, atividades (trabalhos/provas
-    separados), registros de falta, notas lançadas, lembretes pendentes.
-    **Nota de escopo:** `User` não guarda data de cadastro nem de último
-    acesso, então "usuários ativos" aqui significa "total já cadastrado",
-    não "ativo recentemente".
-16. Horário de notificação configurável por usuário
-    (`/horarionotificacao`) — grade de botões 0h-23h,
-    `User.notification_hour` (default 9). Mudou a arquitetura do job de
-    prazos: antes rodava uma vez por dia às 9h fixas pra todo mundo,
-    agora roda de hora em hora (`run_repeating`) e filtra por dentro quem
-    tem `notification_hour == hora_atual`.
-17. Paginação em `/grade` e `/calendario` — **automática**, não muda nada
-    pra quem tem poucas matérias/atividades (o caso comum): só entra em
-    ação se a mensagem inteira não couber no limite de 4096 caracteres do
-    Telegram. `/calendario` pagina por contagem fixa de itens
-    (`ACTIVITIES_PER_PAGE = 10`); `/grade` pagina por **dia da semana**
-    (`SUBJECT_DAYS_PER_PAGE = 2`) pra nunca cortar as matérias de um dia
-    no meio entre duas páginas. Validado manualmente forçando 32 matérias
-    e 62 atividades — nenhuma página gerada jamais ultrapassa 4096
-    caracteres.
-18. Migrations com Alembic — substitui `Base.metadata.create_all()`.
-    Detalhes completos, incluindo o passo de adoção necessário no banco
-    de dev que já existe, em
+5. `/exportar` — downloads a JSON with everything belonging to the user
+   (subjects, activities, absences, grades, pending reminders).
+6. Unit test suite (`tests/`, pytest, in-memory SQLite) covering the whole
+   `bot/services/` layer.
+7. `CLAUDE.md` and `docs/ROADMAP.md`.
+8. `/meuslembretes` — lists the user's pending reminders with a cancel
+   button for each; canceling removes both the DB record and the in-memory
+   scheduled job (`job_queue.get_jobs_by_name` + `schedule_removal()`),
+   otherwise the reminder would still fire even after being canceled.
+9. `/privacidade` — actually implemented (previously only mentioned in
+   `/help`, with no handler). Text lives in `dialogs.PRIVACY_POLICY_TEXT`,
+   informational rather than a formal legal policy — revise/update it if
+   what the bot collects or shares changes.
+10. Schedule conflict handling in manual `/addmateria` — new
+    `subject_service.check_conflict_with_existing` (same overlap logic as
+    `course_service.check_schedule_conflict`, but compared against the
+    user's already-registered subjects instead of the catalog). On a
+    conflict, it says which subject collides and asks for a new start time
+    (goes back to the `START_TIME` conversation state).
+11. Editing a subject's schedule in `/gerenciarmaterias` — the
+    `start_time`/`end_time` conversion/validation logic already existed in
+    `receive_field_update` (unused, the buttons were missing). Added the
+    "Start Time"/"End Time" buttons in `build_subject_edit_view`, and
+    editing now goes through the same conflict check from item 10 —
+    `check_conflict_with_existing` gained the `exclude_subject_id`
+    parameter so a subject doesn't collide with itself.
+12. Automatic weekly summary — the `send_weekly_summary_job` job
+    (`bot/jobs.py`) runs every Monday at 08:00 (`job_queue.run_daily(...,
+    days=(1,))`; heads up: in python-telegram-bot v20+, `days` is
+    0-6=Sunday-Saturday, not the old Monday-Sunday convention) and sends
+    every registered user the same summary as `/semana`. Extracted
+    `build_week_summary_message(db, user)` from `common.py` so it can be
+    reused by both the command and the job.
+13. `/notificacoes` — toggles automatic deadline reminders per user
+    (`User.notifications_enabled`, default `True`). Command + toggle
+    button; `check_deadlines_job` skips anyone who opted out via
+    `user_service.get_user_ids_with_notifications_disabled`. **Bonus: found
+    and fixed a real, pre-existing bug while testing this** —
+    `check_deadlines_job` called
+    `activity_service.get_upcoming_activities`, but that function had
+    always been defined in `user_service.py`, not
+    `activity_service.py`. The daily deadline-reminder job had been
+    throwing an `AttributeError` (swallowed by APScheduler) every time it
+    ran — the "due tomorrow"/"due in 3 days" reminders had never actually
+    been delivered in production. Fixed.
+14. `/exportarcalendario` — generates a `.ics` (iCalendar/RFC 5545) file
+    with the user's assignments and exams, to import into Google
+    Calendar/Apple Calendar/Outlook. It's a point-in-time snapshot
+    (downloadable), not a live subscription — the bot has no public HTTP
+    server to host a calendar URL that apps could re-sync on their own.
+    Built by hand in `export_service.build_activities_ics` (RFC 5545
+    escaping and line folding implemented from scratch, no new dependency).
+    **Real bug found and fixed**: the first version of the handler built
+    the `.ics` outside the `with SessionLocal()` block, and since that
+    accesses `activity.subject.name` (lazy load), it broke with
+    `DetachedInstanceError` as soon as the session closed.
+15. `/stats` for admins — general counts
+    (`bot/services/stats_service.py`): registered users, subjects,
+    activities (assignments/exams separated), absence records, grades
+    entered, pending reminders. **Scope note:** `User` doesn't store a
+    registration or last-access date, so "active users" here means "total
+    ever registered", not "recently active".
+16. Configurable notification time per user
+    (`/horarionotificacao`) — a 0h-23h button grid,
+    `User.notification_hour` (default 9). Changed the deadline job's
+    architecture: it used to run once a day at a fixed 9am for everyone,
+    now it runs hourly (`run_repeating`) and internally filters for whoever
+    has `notification_hour == current_hour`.
+17. Pagination in `/grade` and `/calendario` — **automatic**, doesn't
+    change anything for someone with few subjects/activities (the common
+    case): it only kicks in if the whole message wouldn't fit Telegram's
+    4096-character limit. `/calendario` paginates by a fixed item count
+    (`ACTIVITIES_PER_PAGE = 10`); `/grade` paginates by **weekday**
+    (`SUBJECT_DAYS_PER_PAGE = 2`) so a day's subjects are never split
+    across two pages. Manually validated by forcing 32 subjects and 62
+    activities — no generated page ever exceeds 4096 characters.
+18. Migrations with Alembic — replaces `Base.metadata.create_all()`. Full
+    details, including the adoption step needed for an existing dev
+    database, in
     [`specs/alembic-migrations.md`](specs/alembic-migrations.md).
 
-Ver `git log` para o histórico completo de commits de cada item.
+See `git log` for the full commit history of each item.
 
-## 🔭 Pendente
+## 🔭 Pending
 
-- Testes de handler/integração (fora de escopo da suíte atual de
-  propósito — exigem mockar bastante a API do `python-telegram-bot`; os
-  `services/` concentram a lógica de negócio testável isoladamente, e são
-  reaproveitados 1:1 pela API — ver [`roadmap-api.md`](roadmap-api.md)).
+- Handler/integration tests (deliberately out of scope for the current test
+  suite — would require mocking a lot of `python-telegram-bot`'s API; the
+  `services/` layer concentrates the testable business logic and is reused
+  1:1 by the API — see [`roadmap-api.md`](roadmap-api.md)).

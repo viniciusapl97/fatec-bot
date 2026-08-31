@@ -1,119 +1,126 @@
-# Spec: Design da API (`api/`)
+# Spec: API design (`api/`)
 
-Decisões tomadas em 2026-08-21, ao começar a implementação da API. Ver
-[`roadmap-api.md`](../roadmap-api.md) para o status/changelog resumido (o
-que já foi construído, o que falta).
+Decisions made on 2026-08-21, when starting the API implementation. See
+[`roadmap-api.md`](../roadmap-api.md) for the status/changelog summary
+(what's already been built, what's left).
 
-## Por que uma API por cima de `bot/services/`
+## Why an API on top of `bot/services/`
 
-Toda a regra de negócio do bot já vive em `bot/services/`, sem nenhuma
-dependência do Telegram (nenhum `import telegram`, nenhum `import dialogs`
-— ver `CLAUDE.md`). A API é só mais um "cliente" desses services, do mesmo
-jeito que `bot/handlers/` já é — não duplica lógica nenhuma, e o bot
-continua funcionando de forma totalmente independente da API existir ou
-não.
+All the bot's business logic already lives in `bot/services/`, with no
+dependency on Telegram at all (no `import telegram`, no `import dialogs` —
+see [`../architecture/bot.md`](../architecture/bot.md)). The API is just
+another "client" of these services, the same way `bot/handlers/` already
+is — it doesn't duplicate any logic, and the bot keeps working entirely
+independently of whether the API exists or not.
 
-## Autenticação: token de acesso pessoal (não Telegram Login Widget)
+## Authentication: personal access token (not the Telegram Login Widget)
 
-Existem dois consumidores planejados pra API, com necessidades diferentes
-(ver [`specs/frontend-web-and-app.md`](frontend-web-and-app.md)):
-- **Site**: serve qualquer usuário do bot → precisa de um login de verdade
-  → **Telegram Login Widget** é o caminho certo (ainda não implementado).
-- **App pessoal (React Native, sideload)**: só uso próprio, sem loja → não
-  vale a pena replicar o fluxo OAuth-like do Login Widget.
+There are two planned consumers of the API, with different needs (see
+[`specs/frontend-web-and-app.md`](frontend-web-and-app.md)):
+- **Site**: serves any bot user → needs real login → the **Telegram Login
+  Widget** is the right path (not implemented yet).
+- **Personal app (React Native, sideload)**: personal use only, no store →
+  not worth replicating the Login Widget's OAuth-like flow.
 
-Pra esse segundo caso, implementado um **token de acesso pessoal**:
-- `AccessToken` (`bot/db/models.py`) guarda só o **hash SHA-256** do token
-  — nunca o valor em texto puro. Igual senha, só que sem usuário/senha.
-- `/tokendeacesso` no bot (`bot/handlers/user_settings_handler.py`) gera um
-  token com `secrets.token_urlsafe(32)` e mostra pro usuário **uma única
-  vez** — depois disso, só o hash existe, não tem como recuperar o valor
-  original (se perder, gera outro).
-- `/revogartokens` apaga todos os tokens do usuário de uma vez — pensado
-  pro caso de um token vazar.
-- A API valida via header `Authorization: Bearer <token>` —
-  `api/deps.get_current_user` faz o hash do token recebido e busca no
-  banco (`access_token_service.get_user_by_token`), 401 se não achar.
+For this second case, a **personal access token** was implemented:
+- `AccessToken` (`bot/db/models.py`) stores only the **SHA-256 hash** of
+  the token — never the plaintext value. Like a password, minus the
+  username.
+- `/tokendeacesso` on the bot (`bot/handlers/user_settings_handler.py`)
+  generates a token with `secrets.token_urlsafe(32)` and shows it to the
+  user **exactly once** — after that, only the hash exists, there's no way
+  to recover the original value (if lost, generate another one).
+- `/revogartokens` deletes all of a user's tokens at once — meant for the
+  case where a token leaks.
+- The API validates via the `Authorization: Bearer <token>` header —
+  `api/deps.get_current_user` hashes the received token and looks it up in
+  the database (`access_token_service.get_user_by_token`), 401 if not
+  found.
 
-## Telegram Login Widget (`POST /auth/telegram`) — pro site
+## Telegram Login Widget (`POST /auth/telegram`) — for the site
 
-Decidido em 2026-08-21, ao implementar. O widget devolve pro frontend um
-payload assinado (`id`, `first_name`, `last_name?`, `username?`,
-`photo_url?`, `auth_date`, `hash`) — ver
-[o algoritmo oficial](https://core.telegram.org/widgets/login#checking-authorization).
-`api/routers/auth.py` reproduz esse algoritmo: monta a
-"data-check-string" (todo campo exceto `hash`, e exceto os que vieram
-`None`, como `chave=valor` ordenado por chave e unido por `\n`), calcula
-`HMAC-SHA256` dela usando `SHA256(TELEGRAM_TOKEN)` como chave, e compara
-com `hmac.compare_digest` (evita timing attack). Também rejeita
-`auth_date` com mais de 24h (`TELEGRAM_AUTH_MAX_AGE_SECONDS`), pra um link
-de login antigo não continuar valendo pra sempre.
+Decided on 2026-08-21, while implementing it. The widget returns a signed
+payload to the frontend (`id`, `first_name`, `last_name?`, `username?`,
+`photo_url?`, `auth_date`, `hash`) — see
+[the official algorithm](https://core.telegram.org/widgets/login#checking-authorization).
+`api/routers/auth.py` reproduces that algorithm: builds the
+"data-check-string" (every field except `hash`, and except any that came
+back `None`, as `key=value` sorted by key and joined with `\n`), computes
+`HMAC-SHA256` of it using `SHA256(TELEGRAM_TOKEN)` as the key, and compares
+with `hmac.compare_digest` (avoids timing attacks). It also rejects an
+`auth_date` older than 24h (`TELEGRAM_AUTH_MAX_AGE_SECONDS`), so an old
+login link doesn't stay valid forever.
 
-**Decisão importante: não é uma autenticação separada.** Em vez de inventar
-sessão/JWT só pro site, o endpoint só valida a assinatura, resolve o
-usuário via `user_service.get_or_create_user` (mesma função que qualquer
-handler do bot já usa) e emite um **token de acesso pessoal comum**
-(`access_token_service.create_access_token` — o mesmo mecanismo do
-`/tokendeacesso` no bot). O site recebe esse token, guarda (ainda a
-decidir onde — ver `roadmap-app.md`) e autentica exatamente como o app já
-faz, via `Authorization: Bearer <token>`. Isso significa que `/me` e todos
-os outros endpoints não sabem nem precisam saber se o token veio do bot ou
-do widget — é o mesmo `AccessToken` na mesma tabela.
+**Important decision: this is not a separate authentication scheme.**
+Instead of inventing a session/JWT just for the site, the endpoint only
+validates the signature, resolves the user via
+`user_service.get_or_create_user` (the same function any bot handler
+already uses), and issues a regular **personal access token**
+(`access_token_service.create_access_token` — the same mechanism as the
+bot's `/tokendeacesso`). The site receives that token, stores it (where,
+still to be decided — see `roadmap-app.md`), and authenticates exactly like
+the app already does, via `Authorization: Bearer <token>`. This means `/me`
+and every other endpoint neither knows nor needs to know whether the token
+came from the bot or from the widget — it's the same `AccessToken` in the
+same table.
 
-Trade-off aceito conscientemente: como `AccessToken` não tem expiração
-nem rotação (só `/revogartokens` no bot apaga todos de uma vez), cada
-login pelo widget cria uma linha nova nessa tabela — não há reaproveitamento
-de token entre logins. Pra um MVP isso é aceitável (não há nada sensível
-além dos próprios dados do usuário, e o dono pode sempre revogar tudo pelo
-bot); se acumular lixo demais, o next step é ou reaproveitar token
-existente por usuário, ou dar expiração a tokens emitidos pelo widget
-especificamente (sem afetar o token pessoal do app).
+Consciously accepted trade-off: since `AccessToken` has neither expiration
+nor rotation (only `/revogartokens` on the bot deletes all of them at
+once), every widget login creates a new row in that table — there's no
+token reuse across logins. That's acceptable for an MVP (there's nothing
+sensitive besides the user's own data, and the owner can always revoke
+everything via the bot); if it accumulates too much clutter, the next step
+is either reusing an existing token per user, or giving tokens issued by
+the widget specifically an expiration (without affecting the app's
+personal token).
 
-## Separação entre `api/schemas.py` e `bot/db/models.py`
+## Separation between `api/schemas.py` and `bot/db/models.py`
 
-Os modelos Pydantic de resposta (`api/schemas.py`) são deliberadamente um
-contrato **separado** dos models do SQLAlchemy, mesmo espelhando os mesmos
-campos na maioria dos casos. Isso é intencional: uma mudança de coluna no
-banco não vaza sem querer pro contrato público da API. Endpoints que juntam
-dado de mais de uma tabela (ex.: `ActivityOut`/`AbsenceOut`/`GradeOut`
-embutindo `subject_name`, que não é atributo direto do model) são montados
-manualmente no router, não via `from_attributes` automático do Pydantic.
+The Pydantic response models (`api/schemas.py`) are deliberately a
+**separate** contract from the SQLAlchemy models, even though they mirror
+the same fields in most cases. This is intentional: a database column
+change doesn't accidentally leak into the API's public contract. Endpoints
+that join data from more than one table (e.g. `ActivityOut`/`AbsenceOut`/
+`GradeOut` embedding `subject_name`, which isn't a direct model attribute)
+are assembled by hand in the router, not via Pydantic's automatic
+`from_attributes`.
 
-## Pegadinhas de teste descobertas nesse processo
+## Testing gotchas found along the way
 
-### `StaticPool` pro SQLite dos testes
+### `StaticPool` for the tests' SQLite
 
-Testar a API com o `TestClient` do FastAPI contra o SQLite em memória dos
-testes dava `sqlite3.OperationalError: no such table: ...` mesmo com a
-tabela existindo. Causa: o `TestClient` roda a aplicação ASGI numa thread
-separada da thread do teste, e o pool padrão do SQLite (`SingletonThreadPool`)
-cria um banco em memória **novo e vazio por thread**.
+Testing the API with FastAPI's `TestClient` against the tests' in-memory
+SQLite produced `sqlite3.OperationalError: no such table: ...` even though
+the table existed. Cause: `TestClient` runs the ASGI app on a thread
+separate from the test's thread, and SQLite's default pool
+(`SingletonThreadPool`) creates a **new, empty in-memory database per
+thread**.
 
-Corrigido em `bot/db/base.py`: quando `DATABASE_URL` começa com `sqlite`,
-força `poolclass=StaticPool` + `connect_args={"check_same_thread": False}`
-— todas as threads passam a compartilhar a mesma conexão/banco. Só se aplica
-a SQLite; o Postgres de produção não é afetado (continua com o pool padrão
-do SQLAlchemy).
+Fixed in `bot/db/base.py`: when `DATABASE_URL` starts with `sqlite`, it
+forces `poolclass=StaticPool` + `connect_args={"check_same_thread": False}`
+— every thread now shares the same connection/database. Only applies to
+SQLite; production Postgres is unaffected (still uses SQLAlchemy's default
+pool).
 
-### Criação de tabelas precisa ser `autouse`, não só dentro da fixture `db`
+### Table creation needs to be `autouse`, not just inside the `db` fixture
 
-Testes de API que não pedem a fixture `db` (ex.: "token inválido → 401", que
-não precisa inserir nada no banco) nunca disparavam
-`Base.metadata.create_all()`, que vivia só dentro da fixture `db`. Rodando a
-suíte inteira isso passava despercebido (outro arquivo de teste, executado
-antes, já tinha criado as tabelas), mas rodar só `pytest tests/test_api.py`
-sozinho quebrava com `no such table`.
+API tests that don't request the `db` fixture (e.g. "invalid token → 401",
+which doesn't need to insert anything into the database) never triggered
+`Base.metadata.create_all()`, which used to live only inside the `db`
+fixture. Running the whole suite this went unnoticed (some other test file,
+run earlier, had already created the tables), but running just `pytest
+tests/test_api.py` alone broke with `no such table`.
 
-Corrigido movendo a criação de tabelas pra uma fixture `autouse=True`,
-`scope="session"`, em `tests/conftest.py` — roda uma vez antes de qualquer
-teste, independente de quais/quantos pedem `db`.
+Fixed by moving table creation to an `autouse=True`, `scope="session"`
+fixture in `tests/conftest.py` — runs once before any test, regardless of
+which ones request `db`.
 
-## Validação
+## Validation
 
-Cada leva de endpoints foi testada contra um Postgres real (container
-Docker `postgres:16-alpine`, descartado ao final) além dos testes
-automatizados: gerar token pelo bot → autenticar na API → endpoints
-retornando os dados certos, escopados só ao dono do token → token
-inválido/ausente rejeitado (401/403) → revogar invalida na hora. Rodado
-também com `uvicorn` de verdade (não só `TestClient`), incluindo o `/docs`
-(Swagger) que vem de brinde com o FastAPI.
+Each batch of endpoints was tested against a real Postgres (Docker
+container `postgres:16-alpine`, discarded afterward) in addition to the
+automated tests: generate a token via the bot → authenticate against the
+API → endpoints returning the correct data, scoped only to the token's
+owner → invalid/missing token rejected (401/403) → revoking invalidates
+immediately. Also run with real `uvicorn` (not just `TestClient`),
+including `/docs` (Swagger), which comes free with FastAPI.

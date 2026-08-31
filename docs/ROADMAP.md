@@ -1,40 +1,58 @@
-# Roadmap — Índice
+# Roadmap — Index
 
-Mapa de tudo que existe pra manter contexto entre sessões. Cada frente tem
-seu próprio arquivo de roadmap (o que já foi feito, o que falta); decisões
-de design com alguma ambiguidade real (não mudanças mecânicas) viram um
-spec em `specs/`, referenciado pelo roadmap da frente correspondente.
+Map of everything that exists, to keep context across sessions. Each area
+has its own roadmap file (what's already done, what's left); design
+decisions with real ambiguity (not mechanical changes) become a spec in
+`specs/`, referenced from the roadmap of the matching area.
 
-Atualize o roadmap da frente que você tocou ao concluir ou decidir adiar
-algo. Crie um spec novo só quando a decisão não for óbvia a partir do
-código — coisa tipo "por que essa lib e não aquela", "por que esse modelo
-de autenticação", não "adicionei mais um endpoint que só espelha um
-service que já existia".
+Update the roadmap of whichever area you touched when you finish or decide
+to defer something. Only create a new spec when the decision isn't obvious
+from the code — things like "why this lib and not that one", "why this
+auth model", not "added one more endpoint that just mirrors a service that
+already existed".
 
-Última reorganização: 2026-08-21 (era um arquivo único até aqui — ver
-`git log -- docs/ROADMAP.md` se precisar do histórico anterior).
+To plan a new feature before writing code, use [`features/`](features/)
+(spec → plan → tasks) — see [`features/README.md`](features/README.md). To
+understand how an existing area of the code already works (technical
+reference), use [`architecture/`](architecture/).
 
-## Roadmaps por frente
+Last reorganized: 2026-08-31 (added the `architecture/` and `features/`
+folders, and moved all of `docs/` to English for token economy — see
+`git log -- docs/` if you need the earlier history).
 
-- [`roadmap-bot.md`](roadmap-bot.md) — o bot de Telegram em si. 18 itens
-  entregues, 1 pendência de longo prazo (testes de handler/integração).
-- [`roadmap-api.md`](roadmap-api.md) — API HTTP (`api/`) sobre
-  `bot/services/`. CRUD completo (leitura, frequência/média, escrita) pras
-  4 entidades, mais o Telegram Login Widget (`POST /auth/telegram`) pro
-  site; falta só decidir paginação.
-- [`roadmap-app.md`](roadmap-app.md) — site (React) e app Android/iOS
-  (React Native + widget). Ainda não começados; a API é o que os
-  desbloqueia.
-- [`roadmap-hosting.md`](roadmap-hosting.md) — deploy. Ainda rodando
-  local; plano combinado é AWS free tier (EC2 + RDS), pausado por agora.
+## Roadmaps by area
 
-## Specs (decisões de design)
+- [`roadmap-bot.md`](roadmap-bot.md) — the Telegram bot itself. 18 items
+  delivered, 1 long-term pending item (handler/integration tests).
+- [`roadmap-api.md`](roadmap-api.md) — HTTP API (`api/`) over
+  `bot/services/`. Full CRUD (reads, attendance/average, writes) for the
+  4 entities, plus the Telegram Login Widget (`POST /auth/telegram`) for
+  the site; only pagination is left to decide.
+- [`roadmap-app.md`](roadmap-app.md) — site (React) and Android/iOS app
+  (React Native + widget). Not started yet; the API is what unblocks it.
+- [`roadmap-hosting.md`](roadmap-hosting.md) — deployment. Still running
+  locally; the combined plan is AWS free tier (EC2 + RDS), paused for now.
 
-- [`specs/alembic-migrations.md`](specs/alembic-migrations.md) — por que
-  Alembic, como adotar num banco que já existe, validação feita.
-- [`specs/api-design.md`](specs/api-design.md) — autenticação da API
-  (token pessoal vs. Login Widget), separação `api/schemas.py` vs.
-  `bot/db/models.py`, pegadinhas de teste (SQLite + threads).
+## Specs (design decisions)
+
+- [`specs/alembic-migrations.md`](specs/alembic-migrations.md) — why
+  Alembic, how to adopt it on a database that already exists, validation
+  performed.
+- [`specs/api-design.md`](specs/api-design.md) — API authentication
+  (personal token vs. Login Widget), `api/schemas.py` vs.
+  `bot/db/models.py` separation, testing gotchas found.
 - [`specs/frontend-web-and-app.md`](specs/frontend-web-and-app.md) —
-  stack decidida (React / React Native / Expo), por que um widget de
-  tela inicial sempre precisa de peça nativa, autenticação site vs. app.
+  chosen stack (React / React Native / Expo), why a home-screen widget
+  always needs a native piece, site vs. app authentication.
+
+## Features in planning (spec-driven development)
+
+- [`features/api-pagination/`](features/api-pagination/) — pagination for the
+  API's listing endpoints (`Draft`, see "Next steps" in
+  [`roadmap-api.md`](roadmap-api.md)).
+
+## Technical reference by area
+
+- [`architecture/`](architecture/) — how each layer works today (bot, API,
+  web, migrations/testing, configuration, domain glossary), loaded on
+  demand instead of all at once in `CLAUDE.md`.
